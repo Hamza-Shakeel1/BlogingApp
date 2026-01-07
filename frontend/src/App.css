@@ -1,0 +1,165 @@
+    /* ================= Reset & Base app.jsx ================= */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body,
+    html {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+            'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+            sans-serif;
+        background-color: #f5f5f5;
+    
+    }
+
+    /* ================= App Container ================= */
+    .app-container {
+        display: flex;
+        flex-direction: column;
+        
+    }
+
+    /* ================= App Content ================= */
+    .app-content {
+        display: flex;
+        position: relative;
+    }
+
+    /* ================= Sidebar ================= */
+    .sidebar {
+        position: fixed;
+        top: 60px;
+        /* height of navbar */
+        left: 0;
+        width: 250px;
+    
+        background-color: #f4f4f4;
+        z-index: 10;
+        overflow-y: auto;
+        padding: 20px;
+    }
+
+    /* ================= Main Wrapper ================= */
+    .main-wrapper {
+        flex: 1;
+        transition: margin-left 0.3s ease;
+    }
+
+    /* When sidebar is present */
+    .main-wrapper.with-sidebar-margin {
+        margin-left: 250px;
+        /* width of sidebar */
+    }
+
+    /* Mobile: remove margin */
+    @media (max-width: 768px) {
+        .main-wrapper.with-sidebar-margin {
+            margin-left: 0;
+        }
+    }
+
+    /* ================= Main Content ================= */
+    .main-content {
+        margin-top: 60px;
+        /* navbar height */
+        min-height: 70vh;
+        padding: 20px;
+        background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+        transition: all 0.3s ease-in-out;
+    }
+
+    /* Full page (login/signup) */
+    .main-content.full-page {
+        margin: 0;
+        padding: 0;
+        
+    }
+
+    /* Main content inside sidebar layout */
+    .main-content.with-sidebar,
+    .main-content.without-sidebar {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    /* ================= Content Wrapper ================= */
+    .content-wrapper {
+        max-width: 900px;
+        margin: 20px auto;
+        padding: 0;
+    }
+
+    /* ================= Scrollbar ================= */
+    ::-webkit-scrollbar {
+        width: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 5px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+
+    /* ================= Fade-in Animation ================= */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .main-content>* {
+        animation: fadeIn 0.3s ease-in-out;
+    }
+
+    /* ================= Responsive ================= */
+    @media (max-width: 1024px) {
+        .main-wrapper.with-sidebar-margin {
+            margin-left: 220px;
+        }
+    }
+
+    @media (max-width: 768px) {
+
+        .main-content.with-sidebar,
+        .main-content.without-sidebar {
+            margin-left: 0;
+            padding-left: 15px;
+            padding-right: 15px;
+            padding-top: 70px;
+            /* space for navbar */
+        }
+
+        .content-wrapper {
+            max-width: 100%;
+            padding: 0 10px;
+        }
+    }
+
+    @media (max-width: 480px) {
+
+        .main-content.with-sidebar,
+        .main-content.without-sidebar {
+            padding-left: 10px;
+            padding-right: 10px;
+            padding-top: 60px;
+        }
+
+        .content-wrapper {
+            padding: 0 5px;
+        }
+    }

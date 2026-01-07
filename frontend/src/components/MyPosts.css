@@ -1,0 +1,255 @@
+/* Container */
+.myposts-container {
+    max-width: 1200px;
+    margin: 70px auto auto auto;
+    margin-left: 280px;
+    /* adjust for sidebar */
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    background: #ffffff;
+    border-radius: 16px;
+    color: #2c3e50;
+    min-height: 80vh;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07), 0 10px 20px rgba(0, 0, 0, 0.05);
+}
+
+/* Heading */
+.myposts-container h2 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: #2c3e50;
+    font-weight: 700;
+}
+
+/* Form */
+.myposts-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #e0e0e0;
+}
+
+.myposts-input,
+.myposts-textarea,
+.myposts-file {
+    padding: 10px;
+    font-size: 0.95rem;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+    outline: none;
+    width: 100%;
+    background-color: #ffffff;
+    color: #2c3e50;
+    transition: all 0.3s;
+}
+
+.myposts-input::placeholder,
+.myposts-textarea::placeholder {
+    color: #adb5bd;
+}
+
+.myposts-input:focus,
+.myposts-textarea:focus {
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
+.myposts-textarea {
+    resize: vertical;
+    min-height: 100px;
+    font-family: inherit;
+}
+
+.myposts-form button {
+    width: 120px;
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    background: linear-gradient(135deg, #4a90e2, #357abd);
+    transition: all 0.3s ease;
+}
+
+.myposts-form button:hover {
+    background: linear-gradient(135deg, #357abd, #2868a8);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+}
+
+.myposts-form button:active {
+    transform: translateY(0);
+}
+
+/* Posts Grid - 3 cards per row */
+.myposts-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    /* exactly 3 posts per row */
+    gap: 20px;
+}
+
+/* Post Card */
+.myposts-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 12px;
+    border: 1px solid #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.3s;
+    width: 100%;
+}
+
+.myposts-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Post Image */
+.myposts-card-image {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+}
+
+/* No image placeholder */
+.myposts-card-no-image {
+    width: 100%;
+    height: 150px;
+    background: #eee;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #888;
+    font-style: italic;
+    border-radius: 8px;
+}
+
+/* Post Title and Content */
+.myposts-card-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.myposts-card-content {
+    font-size: 0.95rem;
+    line-height: 1.4;
+    color: #495057;
+}
+
+.myposts-card-tags {
+    font-size: 0.85rem;
+    color: #555;
+}
+
+/* Post Buttons */
+.myposts-card-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.myposts-card-actions button {
+    font-size: 0.85rem;
+    background: linear-gradient(135deg, #4a90e2, #357abd);
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.myposts-card-actions button:hover {
+    background: linear-gradient(135deg, #357abd, #2868a8);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+}
+
+.myposts-card-actions button:active {
+    transform: translateY(0);
+}
+
+/* Floating Add Post Button */
+.myposts-add-button {
+    position: fixed;
+    right: 30px;
+    bottom: 30px;
+    width: 55px;
+    height: 55px;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    font-weight: bold;
+    background: linear-gradient(135deg, #4a90e2, #357abd);
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+    transition: all 0.3s ease;
+}
+
+.myposts-add-button:hover {
+    background: linear-gradient(135deg, #357abd, #2868a8);
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(74, 144, 226, 0.4);
+}
+
+.myposts-add-button:active {
+    transform: scale(1.05);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .myposts-container {
+        margin-left: 30px;
+    }
+
+    .myposts-grid {
+        grid-template-columns: repeat(2, 1fr);
+        /* 2 per row */
+    }
+}
+
+@media (max-width: 768px) {
+    .myposts-container {
+        margin-left: 15px;
+        margin-right: 15px;
+    }
+
+    .myposts-grid {
+        grid-template-columns: 1fr;
+        /* 1 per row */
+    }
+}
+
+@media (max-width: 480px) {
+    .myposts-container {
+        margin-left: 10px;
+        margin-right: 10px;
+        padding: 15px;
+    }
+
+    .myposts-container h2 {
+        font-size: 1.5rem;
+    }
+
+    .myposts-add-button {
+        right: 20px;
+        bottom: 20px;
+        width: 50px;
+        height: 50px;
+    }
+}

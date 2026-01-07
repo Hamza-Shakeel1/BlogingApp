@@ -1,0 +1,203 @@
+/* ===== Page Background ===== */
+.register-page {
+    min-height: 100vh;
+    background: #f5f5f5;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.register-card-wrapper .gradient-orb {
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, #4a90e2, transparent);
+    filter: blur(80px);
+    opacity: 0.1;
+    animation: float 6s ease-in-out infinite;
+}
+
+.gradient-orb-1 {
+    top: 10%;
+    left: 10%;
+}
+
+.gradient-orb-2 {
+    bottom: 20%;
+    right: 10%;
+    background: radial-gradient(circle, #50c878, transparent);
+    animation-delay: 2s;
+}
+
+.gradient-orb-3 {
+    top: 50%;
+    right: 40%;
+    background: radial-gradient(circle, #6c757d, transparent);
+    opacity: 0.05;
+    animation-delay: 4s;
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-30px);
+    }
+}
+
+/* ===== Card ===== */
+.register-wrapper {
+    width: 100%;
+    max-width: 900px;
+    padding: 20px;
+    z-index: 2;
+}
+
+.register-card {
+    background: #ffffff;
+    backdrop-filter: blur(18px);
+    border-radius: 16px;
+    padding: 40px;
+    position: relative;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07), 0 10px 20px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e0e0e0;
+}
+
+/* ===== Headings ===== */
+.title-main {
+    color: #2c3e50;
+    text-align: center;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.subtitle-main {
+    color: #6c757d;
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 0.875rem;
+}
+
+/* ===== Inputs ===== */
+.field-group {
+    margin-bottom: 18px;
+}
+
+.field-label {
+    color: #2c3e50;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 6px;
+    display: block;
+}
+
+.field-input,
+.field-select {
+    width: 100%;
+    padding: 12px 12px 12px 12px;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+    outline: none;
+    background: #f8f9fa;
+    color: #2c3e50;
+    font-size: 15px;
+    transition: all 0.3s;
+}
+
+.field-input::placeholder {
+    color: #adb5bd;
+}
+
+.field-input:focus,
+.field-select:focus {
+    border-color: #4a90e2;
+    background-color: #ffffff;
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
+/* ===== Password Toggle ===== */
+.toggle-password {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #6c757d;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.toggle-password:hover {
+    color: #4a90e2;
+}
+
+/* ===== Buttons ===== */
+.btn-submit {
+    width: 100%;
+    padding: 14px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    color: white;
+    background: linear-gradient(135deg, #4a90e2, #357abd);
+    transition: all 0.3s ease;
+}
+
+.btn-submit:hover {
+    background: linear-gradient(135deg, #357abd, #2868a8);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+}
+
+.btn-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-wrapper {
+    margin-top: 10px;
+}
+
+/* ===== Sign in ===== */
+.signin-note {
+    margin-top: 20px;
+    text-align: center;
+    color: #6c757d;
+    font-size: 0.875rem;
+}
+
+.signin-btn {
+    background: none;
+    border: none;
+    color: #4a90e2;
+    cursor: pointer;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.signin-btn:hover {
+    color: #357abd;
+    text-decoration: underline;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 640px) {
+    .register-card {
+        padding: 30px 20px;
+    }
+
+    .title-main {
+        font-size: 1.75rem;
+    }
+}
