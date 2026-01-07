@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import UserProfile from "./components/UserProfile";
 import CreatePost from "./components/CreatePost";
 import MyPosts from "./components/MyPosts";
-import Sidebar from "./components/Sidebar";
+import SideBar from "./components/SideBar";
 import Signup from "./components/Signup";
 import Login from "./components/LoginForm";
 import PrivateRoute from "./components/PrivateRoute";
@@ -40,7 +40,7 @@ function App() {
 
         <div className="app-content">
           {/* Sidebar only if logged in */}
-          {isLoggedIn && <Sidebar auth={auth} />}
+          {isLoggedIn && <SideBar auth={auth} />}
 
           <div className={`main-wrapper ${isLoggedIn ? "with-sidebar-margin" : ""}`}>
             <Routes>

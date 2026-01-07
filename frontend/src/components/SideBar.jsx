@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import "./Sidebar.css";
 
-const Sidebar = ({ auth }) => {
+const SideBar = ({ auth }) => {
   const user = auth.user;
 
   return (
@@ -27,4 +27,4 @@ const Sidebar = ({ auth }) => {
   );
 };
 
-export default Sidebar;
+export default SideBar;
