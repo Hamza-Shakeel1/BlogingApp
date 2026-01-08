@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://127.0.0.1:8000"; // rename api → API_URL
+const API_URL = "http://blogingapp-production.up.railway.app"; // rename api → API_URL
 
 export const getUsers = async () => {
   try {
