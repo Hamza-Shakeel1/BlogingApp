@@ -1,5 +1,6 @@
 #!/bin/bash
-# Install dependencies
+# Install dependencies in root
+pip install --upgrade pip
 pip install -r requirements.txt
 
 # Start FastAPI app
