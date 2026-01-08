@@ -1,11 +1,12 @@
 fastapi
 uvicorn[standard]
-python-multipart>
+python-multipart
 pydantic
 pymongo
 passlib[bcrypt]
 python-jose
-passlib
+dnspython
+bcrypt
 
 # fastapi==0.111.1
 # uvicorn[standard]==0.24.0
