@@ -3,11 +3,11 @@ import react from '@vitejs/plugin-react'
 import path from 'path'
 
 export default defineConfig({
-  root: path.resolve(__dirname, '../'), // <-- project root (where index.html is)
+  root: path.resolve(__dirname), // now the config is in project root
   plugins: [react()],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, 'src'), // optional, for src imports
+      '@': path.resolve(__dirname, 'src'), // src folder is relative to current folder
     },
   },
   server: {
@@ -15,7 +15,7 @@ export default defineConfig({
     strictPort: true,
   },
   build: {
-    outDir: path.resolve(__dirname, '../dist'), // output to project root /dist
+    outDir: path.resolve(__dirname, 'dist'), // build output inside project root /dist
     emptyOutDir: true,
   },
 })
