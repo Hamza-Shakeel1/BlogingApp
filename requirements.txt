@@ -1,7 +1,7 @@
 fastapi
 uvicorn[standard]
 python-multipart
-pydantic[email]       # <-- ensures email-validator is installed
+pydantic[email]
 pymongo
 dnspython
 passlib[bcrypt]
