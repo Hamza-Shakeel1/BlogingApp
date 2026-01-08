@@ -4,7 +4,7 @@ python-multipart
 pydantic
 pymongo
 dnspython
-passlib[bcrypt]
+passlib
 bcrypt
 python-jose
 

@@ -13,6 +13,7 @@ from bson.errors import InvalidId
 
 app = FastAPI(title="Blog API")
 
+
 # ==========================
 # MongoDB & JWT
 # ==========================
