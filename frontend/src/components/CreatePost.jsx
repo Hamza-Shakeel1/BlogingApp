@@ -1,8 +1,10 @@
+// src/components/CreatePost.jsx
 import { useEffect, useState } from "react";
 import axios from "axios";
 import "./CreatePost.css";
 
-const API_URL = "http://blogingapp-production.up.railway.app";
+// ✅ Correct backend URL
+const API_URL = "https://blogingapp-production.up.railway.app";
 
 const CreatePost = () => {
   const [posts, setPosts] = useState([]);
@@ -23,11 +25,11 @@ const CreatePost = () => {
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
 
+  // 🔹 Fetch all posts
   useEffect(() => {
     fetchPosts();
   }, []);
 
-  // 🔹 Fetch all posts
   const fetchPosts = async () => {
     setLoading(true);
     setError("");
@@ -183,7 +185,7 @@ const CreatePost = () => {
             ) : (
               filteredPosts.map((post) => (
                 <div
-                  key={post._id || post.title}
+                  key={post.id}
                   className="post-card"
                   onClick={() => handlePostClick(post)}
                 >
