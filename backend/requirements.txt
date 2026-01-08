@@ -2,5 +2,5 @@ fastapi
 uvicorn[standard]
 python-multipart
 pydantic
-fastapi[all]
+
 pymongo
