@@ -5,6 +5,7 @@ pydantic
 pymongo
 passlib[bcrypt]
 python-jose
+passlib
 
 # fastapi==0.111.1
 # uvicorn[standard]==0.24.0
