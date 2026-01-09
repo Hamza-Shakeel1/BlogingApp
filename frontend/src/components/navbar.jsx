@@ -19,10 +19,10 @@ const Navbar = () => {
           // Logged in buttons
           <>
             <Link
-              to="/myposts"
+              to="/post"
               className={`nav-btn ${location.pathname === "/myposts" ? "active" : ""}`}
             >
-              My Posts
+              Posts
             </Link>
 
             <Link
