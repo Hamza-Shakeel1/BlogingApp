@@ -3,7 +3,8 @@ User profile .upn-container {
     width: 95%;
     height: auto;
     margin: 70px auto auto;
-    margin-left: 15rem;
+
+    margin-left: 30rem;
     padding: 100px 50px;
     border-radius: 30px;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
