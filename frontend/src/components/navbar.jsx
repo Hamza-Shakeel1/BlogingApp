@@ -20,7 +20,7 @@ const Navbar = () => {
           <>
             <Link
               to="/post"
-              className={`nav-btn ${location.pathname === "/myposts" ? "active" : ""}`}
+              className={`nav-btn ${location.pathname === "/post" ? "active" : ""}`}
             >
               Posts
             </Link>
