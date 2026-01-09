@@ -19,8 +19,8 @@ const Navbar = () => {
           // Logged in buttons
           <>
             <Link
-              to="/post"
-              className={`nav-btn ${location.pathname === "/post" ? "active" : ""}`}
+              to="*"
+              className={`nav-btn ${location.pathname === "*" ? "active" : ""}`}
             >
               Posts
             </Link>
