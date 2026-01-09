@@ -164,7 +164,7 @@ def get_users():
     return [user_helper(u) for u in user_collection.find()]
 
 @app.post("/signup")
-async def create_user(
+async def signup(
     name: str = Form(...),
     email: str = Form(...),
     password: str = Form(...),
@@ -176,16 +176,17 @@ async def create_user(
     if user_collection.find_one({"email": email}):
         raise HTTPException(status_code=400, detail="Email already exists")
 
-    hashed_password = hash_password(password)
+    hashed = hash_password(password)
     user_dict = {
         "name": name,
         "email": email,
-        "password": hashed_password,
+        "password": hashed,
         "role": role,
         "contact": contact,
         "profileImage": None,
         "createdAt": datetime.utcnow()
     }
+
     if profileImage and profileImage.filename:
         contents = await profileImage.read()
         user_dict["profileImage"] = base64.b64encode(contents).decode("utf-8")
@@ -193,7 +194,6 @@ async def create_user(
     result = user_collection.insert_one(user_dict)
     new_user = user_collection.find_one({"_id": result.inserted_id})
     return {"message": "User registered successfully", "user": user_helper(new_user)}
-
 class LoginModel(BaseModel):
     email: str
     password: str
@@ -203,35 +203,31 @@ class LoginModel(BaseModel):
 # -------------------------------
 @app.post("/login")
 def login(login: LoginModel):
-    user = user_collection.find_one({"email": login.email.lower()})  # remove await
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+    try:
+        user = user_collection.find_one({"email": login.email.lower()})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
 
-    if not verify_password(login.password, user["password"]):
-        raise HTTPException(status_code=401, detail="Incorrect password")
+        if not verify_password(login.password, user["password"]):
+            raise HTTPException(status_code=401, detail="Incorrect password")
 
-    token_data = {"user_id": str(user["_id"]), "role": user.get("role", "user")}
-    access_token = create_access_token(token_data)
+        token_data = {"user_id": str(user["_id"]), "role": user.get("role", "user")}
+        access_token = create_access_token(token_data)
 
-    return {
-        "message": "Login successful",
-        "access_token": access_token,
-        "role": user.get("role", "user"),
-        "userId": str(user["_id"]),
-        "user": {"email": user["email"], "name": user.get("name", "")}
-    }
+        return {
+            "message": "Login successful",
+            "access_token": access_token,
+            "role": user.get("role", "user"),
+            "userId": str(user["_id"]),
+            "user": {"email": user["email"], "name": user.get("name", "")}
+        }
 
+    except Exception as e:
+        print("Login error:", e)
+        raise HTTPException(status_code=500, detail="Internal server error")
 @app.get("/user/me")
-def get_my_profile(current_user: User = Depends(get_current_user)):
-    return user_helper({
-        "_id": ObjectId(current_user.id),
-        "name": current_user.name,
-        "email": current_user.email,
-        "role": current_user.role,
-        "contact": current_user.contact,
-        "profileImage": current_user.profileImage,
-        "createdAt": current_user.createdAt
-    })
+def get_my_profile(current_user: dict = Depends(get_current_user)):
+    return user_helper(current_user)
 
 @app.put("/user/me")
 async def update_my_profile(
@@ -239,7 +235,7 @@ async def update_my_profile(
     password: str = Form(None),
     contact: str = Form(None),
     profileImage: UploadFile = File(None),
-    current_user: User = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user)
 ):
     update_data = {}
     if name: update_data["name"] = name
@@ -248,12 +244,13 @@ async def update_my_profile(
     if profileImage and profileImage.filename:
         contents = await profileImage.read()
         update_data["profileImage"] = base64.b64encode(contents).decode("utf-8")
+
     if not update_data:
         raise HTTPException(status_code=400, detail="No fields to update")
-    user_collection.update_one({"_id": ObjectId(current_user.id)}, {"$set": update_data})
-    updated_user = user_collection.find_one({"_id": ObjectId(current_user.id)})
-    return {"message": "Profile updated successfully", "user": user_helper(updated_user)}
 
+    user_collection.update_one({"_id": current_user["_id"]}, {"$set": update_data})
+    updated_user = user_collection.find_one({"_id": current_user["_id"]})
+    return {"message": "Profile updated successfully", "user": user_helper(updated_user)}
 # ==========================
 # Post Endpoints
 # ==========================
