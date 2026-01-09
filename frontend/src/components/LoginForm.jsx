@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./Login.css";
 
-const API_URL = "https://blogingapp-production.up.railway.app/login";
+const API_URL = "https://blogingapp-production.up.railway.app";
 
 export default function Login({ setAuth }) {
   const [form, setForm] = useState({ email: "", password: "" });
