@@ -1,3 +1,4 @@
+// src/components/MyPosts.jsx
 import { useEffect, useState } from "react";
 import axios from "axios";
 import "./CreatePost.css";
@@ -22,57 +23,43 @@ const MyPosts = () => {
 
   const token = localStorage.getItem("token");
 
-  // 🔹 Fetch admin posts
   useEffect(() => {
     fetchPosts();
   }, []);
 
   const fetchPosts = async () => {
+    setLoading(true);
+    setError("");
     try {
-      setLoading(true);
-      setError("");
-
       const res = await axios.get(`${API_URL}/post/my`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-      setPosts(Array.isArray(res.data) ? res.data : []);
+      setPosts(res.data);
     } catch (err) {
-      console.error("Fetch posts error:", err);
-      setError("Failed to fetch your posts (admin only)");
+      console.error(err);
+      setError("Failed to fetch posts");
     } finally {
       setLoading(false);
     }
   };
 
-  // 🔹 Form handlers
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleFileChange = (e) => {
-    setForm((prev) => ({ ...prev, postImage: e.target.files[0] || null }));
+    setForm((prev) => ({ ...prev, postImage: e.target.files?.[0] || null }));
   };
 
   const resetForm = () => {
-    setForm({
-      id: null,
-      title: "",
-      content: "",
-      tags: "",
-      postImage: null,
-      existingImage: null,
-    });
+    setForm({ id: null, title: "", content: "", tags: "", postImage: null, existingImage: null });
     setShowForm(false);
   };
 
-  // 🔹 Edit post
   const handleEdit = (post) => {
     setForm({
-      id: post.id, // backend returns "id"
+      id: post.id,
       title: post.title,
       content: post.content,
       tags: post.tags?.join(", ") || "",
@@ -82,7 +69,6 @@ const MyPosts = () => {
     setShowForm(true);
   };
 
-  // 🔹 Update post
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -102,14 +88,13 @@ const MyPosts = () => {
       resetForm();
       fetchPosts();
     } catch (err) {
-      console.error("Update error:", err);
+      console.error(err);
       setError("Failed to update post");
     } finally {
       setSaving(false);
     }
   };
 
-  // 🔹 Delete post
   const handleDelete = async (postId) => {
     if (!window.confirm("Are you sure you want to delete this post?")) return;
     try {
@@ -118,10 +103,12 @@ const MyPosts = () => {
       });
       fetchPosts();
     } catch (err) {
-      console.error("Delete error:", err);
+      console.error(err);
       alert("Failed to delete post");
     }
   };
+
+  const getImageUrl = (post) => post?.postImage ? `data:image/*;base64,${post.postImage}` : null;
 
   if (loading) return <p>Loading posts...</p>;
 
@@ -129,92 +116,45 @@ const MyPosts = () => {
     <div className="create-post-container">
       {error && <p style={{ color: "red" }}>{error}</p>}
 
-      {showForm ? (
+      {showForm && (
         <form className="create-post-form" onSubmit={handleSubmit}>
           <h2>Update Post</h2>
-
-          <input
-            type="text"
-            name="title"
-            placeholder="Title"
-            value={form.title}
-            onChange={handleChange}
-            required
-          />
-
-          <textarea
-            name="content"
-            placeholder="Content"
-            value={form.content}
-            onChange={handleChange}
-            required
-          />
-
-          <input
-            type="text"
-            name="tags"
-            placeholder="Tags (comma separated)"
-            value={form.tags}
-            onChange={handleChange}
-          />
-
+          <input type="text" name="title" value={form.title} onChange={handleChange} required />
+          <textarea name="content" value={form.content} onChange={handleChange} required />
+          <input type="text" name="tags" value={form.tags} onChange={handleChange} placeholder="Tags (comma separated)" />
           <input type="file" accept="image/*" onChange={handleFileChange} />
-
           {form.existingImage && !form.postImage && (
             <div style={{ marginTop: 10 }}>
               <p>Current Image:</p>
-              <img
-                src={`data:image/*;base64,${form.existingImage}`}
-                alt="current"
-                style={{ width: "200px" }}
-              />
+              <img src={getImageUrl(form)} alt="current" style={{ width: "200px" }} />
             </div>
           )}
-
           <div style={{ marginTop: 10, display: "flex", gap: 10 }}>
-            <button type="submit" disabled={saving}>
-              {saving ? "Updating..." : "Update"}
-            </button>
-            <button type="button" onClick={resetForm}>
-              Cancel
-            </button>
+            <button type="submit" disabled={saving}>{saving ? "Updating..." : "Update"}</button>
+            <button type="button" onClick={resetForm}>Cancel</button>
           </div>
         </form>
-      ) : (
-        <>
-          <h2>Admin Posts</h2>
-
-          <div className="posts-list">
-            {posts.length === 0 ? (
-              <p>No posts yet.</p>
-            ) : (
-              posts.map((post) => (
-                <div key={post.id} className="post-card">
-                  <h3>{post.title}</h3>
-                  <p>{post.content}</p>
-
-                  {post.tags?.length > 0 && (
-                    <small>Tags: {post.tags.join(", ")}</small>
-                  )}
-
-                  {post.postImage && (
-                    <img
-                      src={`data:image/*;base64,${post.postImage}`}
-                      alt={post.title}
-                      style={{ width: "200px", marginTop: 10 }}
-                    />
-                  )}
-
-                  <div className="post-actions">
-                    <button onClick={() => handleEdit(post)}>Edit</button>
-                    <button onClick={() => handleDelete(post.id)}>Delete</button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </>
       )}
+
+      <h2>My Posts</h2>
+      <div className="posts-list">
+        {posts.length === 0 ? (
+          <p>No posts found</p>
+        ) : (
+          posts.map((post) => (
+            <div key={post.id} className="post-card">
+              {getImageUrl(post) ? <img src={getImageUrl(post)} alt={post.title} /> : <div className="placeholder-image">No Image</div>}
+              <h3>{post.title}</h3>
+              <p>{post.content.length > 50 ? post.content.slice(0, 50) + "..." : post.content}</p>
+              <small>Tags: {post.tags?.join(", ")}</small>
+              <div className="post-actions">
+                <button onClick={() => handleEdit(post)}>Edit</button>
+                <button onClick={() => handleDelete(post.id)}>Delete</button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 };
