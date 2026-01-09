@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./Signup.css";
 
-const API_URL = "http://blogingapp-production.up.railway.app/signup";
+const API_URL = "https://blogingapp-production.up.railway.app/signup";
 
 export default function Signup() {
   const navigate = useNavigate();
