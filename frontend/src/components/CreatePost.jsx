@@ -4,7 +4,7 @@ import axios from "axios";
 import "./CreatePost.css";
 
 // ✅ Correct backend URL
-const API_URL = "https://blogingapp-production.up.railway.app/post";
+const API_URL = "https://blogingapp-production.up.railway.app";
 
 const CreatePost = () => {
   const [posts, setPosts] = useState([]);
@@ -38,7 +38,7 @@ const CreatePost = () => {
       setPosts(res.data);
     } catch (err) {
       console.error(err);
-      setError("Failed to fetch posts");
+      setError("Failed to fetch post");
     } finally {
       setLoading(false);
     }
