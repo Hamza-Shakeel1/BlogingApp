@@ -89,6 +89,18 @@ def user_helper(user):
         "profileImage": user.get("profileImage"),
         "createdAt": user.get("createdAt")
     }
+@app.get("/post/my")
+def get_admin_posts(current_user: User = Depends(get_current_user)):
+    """
+    Fetch posts created by admin users.
+    Only admins can see their posts here.
+    """
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Only admins can view their posts")
+    
+    posts = post_collection.find({"authorId": current_user.id})
+    return [post_helper(p) for p in posts]
+
 
 def post_helper(post):
     return {
