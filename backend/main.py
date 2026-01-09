@@ -291,8 +291,7 @@ def display_posts(current_user: Optional[User] = Depends(get_current_user_option
         user_posts = post_collection.find({"authorId": current_user.id})
         return [post_helper(p) for p in user_posts]
     return [post_helper(p) for p in post_collection.find()]
-
-@app.put("/post/{post_id}")
+@router.put("/post/{post_id}")
 async def update_post(
     post_id: str,
     title: str = Form(None),
@@ -301,23 +300,42 @@ async def update_post(
     postImage: UploadFile = File(None),
     current_user: User = Depends(get_current_user)
 ):
-    post = post_collection.find_one({"_id": ObjectId(post_id)})
+    # Find the post by ID
+    try:
+        post_obj_id = ObjectId(post_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid post ID")
+
+    post = post_collection.find_one({"_id": post_obj_id})
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
-    if current_user.role != "admin" and post["authorId"] != current_user.id:
+
+    # Only admin or the author can update
+    if current_user.role != "admin" and str(post.get("authorId")) != str(current_user.id):
         raise HTTPException(status_code=403, detail="Not allowed to update this post")
+
     update_data = {}
-    if title: update_data["title"] = title
-    if content: update_data["content"] = content
-    if tags: update_data["tags"] = [t.strip() for t in tags.split(",")]
+
+    if title is not None:
+        update_data["title"] = title
+    if content is not None:
+        update_data["content"] = content
+    if tags is not None:
+        # Convert comma-separated string to list
+        update_data["tags"] = [t.strip() for t in tags.split(",") if t.strip()]
     if postImage and postImage.filename:
         contents = await postImage.read()
         update_data["postImage"] = base64.b64encode(contents).decode("utf-8")
-    update_data["updatedAt"] = datetime.utcnow()
+
     if not update_data:
         raise HTTPException(status_code=400, detail="No fields to update")
-    post_collection.update_one({"_id": ObjectId(post_id)}, {"$set": update_data})
-    updated_post = post_collection.find_one({"_id": ObjectId(post_id)})
+
+    update_data["updatedAt"] = datetime.utcnow()
+
+    # Update the post in DB
+    post_collection.update_one({"_id": post_obj_id}, {"$set": update_data})
+
+    updated_post = post_collection.find_one({"_id": post_obj_id})
     return {"message": "Post updated", "post": post_helper(updated_post)}
 
 @app.delete("/post/{post_id}")
