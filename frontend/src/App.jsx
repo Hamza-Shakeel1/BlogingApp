@@ -7,7 +7,7 @@ import MyPosts from "./components/MyPosts";
 import CreatePost from "./components/CreatePost";
 import SideBar from "./components/SideBar";
 import Signup from "./components/Signup";
-import Login from "./components/Login";
+import Login from "./components/LoginForm";
 import PrivateRoute from "./components/PrivateRoute";
 import Navbar from "./components/Navbar";
 
