@@ -32,7 +32,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
-        "https://bloging-app-ruby.vercel.app",
+        "https://bloging-hhk25sfjw-hamzas-projects-30a3d32b.vercel.app"
     ],
     allow_credentials=True,
     allow_methods=["*"],
