@@ -212,6 +212,7 @@ def login(login: LoginModel):
         if not verify_password(login.password, user["password"]):
             raise HTTPException(status_code=401, detail="Incorrect password")
 
+
         token_data = {"user_id": str(user["_id"]), "role": user.get("role", "user")}
         access_token = create_access_token(token_data)
 
