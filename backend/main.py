@@ -238,28 +238,24 @@ def login(login: LoginModel):
 def get_my_profile(current_user: dict = Depends(get_current_user)):
     return user_helper(current_user)
 
-@app.put("/user/me")
-async def update_my_profile(
-    name: str = Form(None),
-    password: str = Form(None),
-    contact: str = Form(None),
-    profileImage: UploadFile = File(None),
-    current_user: dict = Depends(get_current_user)
-):
-    update_data = {}
-    if name: update_data["name"] = name
-    if password: update_data["password"] = hash_password(password)
-    if contact is not None: update_data["contact"] = contact
-    if profileImage and profileImage.filename:
-        contents = await profileImage.read()
-        update_data["profileImage"] = base64.b64encode(contents).decode("utf-8")
+@app.get("/user/me")
+async def get_my_profile(current_user: dict = Depends(get_current_user)):
+    user = user_collection.find_one({"_id": current_user["_id"]})
 
-    if not update_data:
-        raise HTTPException(status_code=400, detail="No fields to update")
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
 
-    user_collection.update_one({"_id": current_user["_id"]}, {"$set": update_data})
-    updated_user = user_collection.find_one({"_id": current_user["_id"]})
-    return {"message": "Profile updated successfully", "user": user_helper(updated_user)}
+    return {
+        "name": user.get("name", ""),
+        "email": user.get("email", ""),
+        "role": user.get("role", ""),
+        "contact": user.get("contact", ""),
+        "profileImage": (
+            f"data:image/jpeg;base64,{user['profileImage']}"
+            if user.get("profileImage")
+            else None
+        )
+    }
 # ==========================
 # Post Endpoints
 # ==========================
