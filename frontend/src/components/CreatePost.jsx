@@ -1,4 +1,4 @@
-// src/components/CreatePost.jsx
+// src/components/PostsPage.jsx
 import { useEffect, useState } from "react";
 import axios from "axios";
 import "./CreatePost.css";
@@ -6,7 +6,7 @@ import "./CreatePost.css";
 // ✅ Base backend URL
 const API_URL = "https://blogingapp-production.up.railway.app";
 
-const CreatePost = () => {
+const PostsPage = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -23,7 +23,7 @@ const CreatePost = () => {
   });
 
   const token = localStorage.getItem("token");
-  const role = localStorage.getItem("role");
+  const role = localStorage.getItem("role"); // can be "admin" or null
 
   // 🔹 Fetch all posts
   useEffect(() => {
@@ -34,7 +34,6 @@ const CreatePost = () => {
     setLoading(true);
     setError("");
     try {
-      // ✅ GET all posts from /post
       const res = await axios.get(`${API_URL}/posts`);
       setPosts(res.data);
     } catch (err) {
@@ -52,25 +51,18 @@ const CreatePost = () => {
   };
 
   const handleFileChange = (e) => {
-    setForm((prev) => ({
-      ...prev,
-      postImage: e.target.files?.[0] || null,
-    }));
+    setForm((prev) => ({ ...prev, postImage: e.target.files?.[0] || null }));
   };
 
   const resetForm = () => {
-    setForm({
-      title: "",
-      content: "",
-      tags: "",
-      postImage: null,
-    });
+    setForm({ title: "", content: "", tags: "", postImage: null });
     setShowForm(false);
   };
 
-  // 🔹 Submit post
+  // 🔹 Submit new post (admin only)
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (role !== "admin") return; // safety check
     setSaving(true);
     setError("");
 
@@ -79,10 +71,8 @@ const CreatePost = () => {
       formData.append("title", form.title);
       formData.append("content", form.content);
       formData.append("tags", form.tags);
-
       if (form.postImage) formData.append("postImage", form.postImage);
 
-      // ✅ POST to /post/create
       await axios.post(`${API_URL}/post/create`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -100,7 +90,7 @@ const CreatePost = () => {
     }
   };
 
-  // 🔹 Select post for modal
+  // 🔹 Modal
   const handlePostClick = (post) => {
     setSelectedPost(post);
   };
@@ -112,9 +102,7 @@ const CreatePost = () => {
     .filter((post) => {
       const query = searchQuery.toLowerCase();
       const titleMatch = post.title?.toLowerCase().includes(query);
-      const tagsMatch = post.tags?.some((tag) =>
-        tag.toLowerCase().includes(query)
-      );
+      const tagsMatch = post.tags?.some((tag) => tag.toLowerCase().includes(query));
       return titleMatch || tagsMatch;
     })
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
@@ -129,8 +117,8 @@ const CreatePost = () => {
     <div className="create-post-container">
       {error && <p style={{ color: "red" }}>{error}</p>}
 
-      {/* 🔹 Create Post Form */}
-      {showForm ? (
+      {/* 🔹 Create Post Form (Admin only) */}
+      {showForm && role === "admin" && (
         <form className="create-post-form" onSubmit={handleSubmit}>
           <h2>Create Post</h2>
 
@@ -170,55 +158,44 @@ const CreatePost = () => {
             </button>
           </div>
         </form>
-      ) : (
-        <>
-          {/* 🔹 Search */}
-          <div className="search-container">
-            <input
-              type="text"
-              placeholder="Search by title or tags..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="search-input"
-            />
-          </div>
-
-          <h2>Posts</h2>
-          <div className="posts-list">
-            {filteredPosts.length === 0 ? (
-              <p>No posts found</p>
-            ) : (
-              filteredPosts.map((post) => (
-                <div
-                  key={post.id}
-                  className="post-card"
-                  onClick={() => handlePostClick(post)}
-                >
-                  {post.postImage ? (
-                    <img src={getImageUrl(post)} alt={post.title} />
-                  ) : (
-                    <div className="placeholder-image">No Image</div>
-                  )}
-                  <h3>{post.title}</h3>
-                  <p className="post-content">
-                    {post.content.length > 50
-                      ? post.content.slice(0, 50) + "..."
-                      : post.content}
-                  </p>
-                  <small>Tags: {post.tags?.join(", ")}</small>
-                </div>
-              ))
-            )}
-          </div>
-        </>
       )}
 
-      {/* 🔹 Add Post Button */}
+      {/* 🔹 Search */}
+      <div className="search-container">
+        <input
+          type="text"
+          placeholder="Search by title or tags..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="search-input"
+        />
+      </div>
+
+      <h2>Posts</h2>
+      <div className="posts-list">
+        {filteredPosts.length === 0 ? (
+          <p>No posts found</p>
+        ) : (
+          filteredPosts.map((post) => (
+            <div key={post.id} className="post-card" onClick={() => handlePostClick(post)}>
+              {post.postImage ? (
+                <img src={getImageUrl(post)} alt={post.title} />
+              ) : (
+                <div className="placeholder-image">No Image</div>
+              )}
+              <h3>{post.title}</h3>
+              <p className="post-content">
+                {post.content.length > 50 ? post.content.slice(0, 50) + "..." : post.content}
+              </p>
+              <small>Tags: {post.tags?.join(", ")}</small>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* 🔹 Add Post Button (Admin only) */}
       {!showForm && role === "admin" && (
-        <button
-          className="add-post-button"
-          onClick={() => setShowForm(true)}
-        >
+        <button className="add-post-button" onClick={() => setShowForm(true)}>
           +
         </button>
       )}
@@ -226,16 +203,9 @@ const CreatePost = () => {
       {/* 🔹 Modal */}
       {selectedPost && (
         <div className="modal-overlay" onClick={() => setSelectedPost(null)}>
-          <div
-            className="modal-content"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             {selectedPost.postImage ? (
-              <img
-                src={getImageUrl(selectedPost)}
-                alt={selectedPost.title}
-                className="modal-image"
-              />
+              <img src={getImageUrl(selectedPost)} alt={selectedPost.title} className="modal-image" />
             ) : (
               <div className="placeholder-image">No Image</div>
             )}
@@ -250,4 +220,4 @@ const CreatePost = () => {
   );
 };
 
-export default CreatePost;
+export default PostsPage;

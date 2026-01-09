@@ -1,17 +1,18 @@
 // src/App.jsx
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+
 import UserProfile from "./components/UserProfile";
-import CreatePost from "./components/CreatePost";
 import MyPosts from "./components/MyPosts";
 import SideBar from "./components/SideBar";
 import Signup from "./components/Signup";
 import Login from "./components/LoginForm";
 import PrivateRoute from "./components/PrivateRoute";
-import Navbar from "./components/navbar";
+import Navbar from "./components/Navbar";
+import PostsPage from "./components/PostsPage"; // updated
 
 function App() {
-  // Single source of truth for auth with safe localStorage parsing
+  // Single source of truth for auth
   const [auth, setAuth] = useState(() => {
     const token = localStorage.getItem("token");
     const role = localStorage.getItem("role");
@@ -19,9 +20,7 @@ function App() {
 
     try {
       const userStr = localStorage.getItem("user");
-      if (userStr && userStr !== "undefined") {
-        user = JSON.parse(userStr);
-      }
+      if (userStr && userStr !== "undefined") user = JSON.parse(userStr);
     } catch (err) {
       console.warn("Error parsing user from localStorage:", err);
       user = null;
@@ -35,7 +34,7 @@ function App() {
   return (
     <BrowserRouter>
       <div className="app-container">
-        {/* Navbar receives auth and setAuth */}
+        {/* Navbar always visible */}
         <Navbar auth={auth} setAuth={setAuth} />
 
         <div className="app-content">
@@ -48,13 +47,13 @@ function App() {
               <Route path="/signup" element={<Signup />} />
               <Route path="/login" element={<Login setAuth={setAuth} />} />
 
-              {/* All Posts */}
+              {/* All Posts - visible to everyone */}
               <Route
                 path="/posts"
                 element={
                   <main className={`main-content ${isLoggedIn ? "with-sidebar" : "without-sidebar"}`}>
                     <div className="content-wrapper">
-                      <CreatePost />
+                      <PostsPage />
                     </div>
                   </main>
                 }
@@ -95,7 +94,7 @@ function App() {
                   <PrivateRoute role="admin">
                     <main className="main-content with-sidebar">
                       <div className="content-wrapper">
-                        <CreatePost />
+                        <PostsPage /> {/* Admin can use the same page to add posts */}
                       </div>
                     </main>
                   </PrivateRoute>
