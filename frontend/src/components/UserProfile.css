@@ -1,36 +1,41 @@
-User profile .upn-container {
+/* ===============================
+   User Profile Container
+================================ */
+.upn-container {
     max-width: 900px;
     width: 95%;
-    height: auto;
-    margin: 70px auto auto;
-
+    margin: 80px auto;
     margin-left: 300px;
-    padding: 100px 50px;
+    /* space for sidebar */
+    padding: 80px 50px;
     border-radius: 30px;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+    background: #111827;
     color: #ffffff;
     font-family: "Inter", "Helvetica", sans-serif;
     box-sizing: border-box;
 }
 
-
+/* ===============================
+   Header
+================================ */
 .upn-header {
     text-align: center;
     font-size: 30px;
     font-weight: 700;
     margin-bottom: 30px;
     letter-spacing: 1px;
-    display: none;
 }
 
-/* Success / Error messages */
+/* ===============================
+   Messages
+================================ */
 .upn-error,
 .upn-success,
 .upn-loading {
     text-align: center;
     margin-bottom: 15px;
     font-weight: 500;
-    display: none;
 }
 
 .upn-error {
@@ -41,7 +46,13 @@ User profile .upn-container {
     color: #34d399;
 }
 
-/* Avatar */
+.upn-loading {
+    color: #93c5fd;
+}
+
+/* ===============================
+   Avatar
+================================ */
 .upn-avatar-wrapper {
     text-align: center;
     margin-bottom: 25px;
@@ -61,7 +72,6 @@ User profile .upn-container {
     color: #fff;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     transition: transform 0.2s;
-    display: none;
 }
 
 .upn-avatar-img:hover,
@@ -69,45 +79,48 @@ User profile .upn-container {
     transform: scale(1.05);
 }
 
-/* File input */
+/* ===============================
+   File Input
+================================ */
 .upn-file-input {
     display: block;
-    margin: 0 auto 25px auto;
+    margin: 15px auto 25px auto;
     cursor: pointer;
     color: #fff;
-    display: none;
 }
 
+/* ===============================
+   Inputs
+================================ */
 .upn-input {
     width: 100%;
-    max-width: 100%;
     padding: 14px 15px;
-    margin-bottom: 20px;
-    margin-top: 15px;
+    margin: 15px 0 20px 0;
     border-radius: 8px;
-    border: none;
+    border: 1px solid #374151;
     outline: none;
     font-size: 16px;
-    background-color: white;
-    color: black;
+    background-color: #ffffff;
+    color: #000000;
     transition: all 0.2s ease;
-    border: 1px solid #33334d;
 }
 
 .upn-input:focus {
-    background-color: #44455c;
-    box-shadow: 0 0 5px #4f46e5;
+    background-color: #f9fafb;
+    box-shadow: 0 0 5px #6366f1;
 }
 
 .upn-input[disabled] {
-    background-color: #1f1f2d;
-    color: #9ca3af;
+    background-color: #e5e7eb;
+    color: #6b7280;
     cursor: not-allowed;
 }
 
+/* ===============================
+   Button
+================================ */
 .upn-button {
     width: 100%;
-    max-width: 100%;
     padding: 12px 0;
     font-size: 16px;
     font-weight: 600;
@@ -126,11 +139,14 @@ User profile .upn-container {
 }
 
 .upn-button:disabled {
-    background: #55556a;
+    background: #6b7280;
     cursor: not-allowed;
     box-shadow: none;
 }
 
+/* ===============================
+   Responsive
+================================ */
 @media (max-width: 1024px) {
     .upn-container {
         margin-left: 5rem;
@@ -140,7 +156,7 @@ User profile .upn-container {
 
 @media (max-width: 768px) {
     .upn-container {
-        margin-left: 2rem;
+        margin-left: 0;
         padding: 50px 30px;
         border-radius: 20px;
     }
@@ -152,7 +168,6 @@ User profile .upn-container {
 
 @media (max-width: 550px) {
     .upn-container {
-        margin-left: 1rem;
         padding: 25px 15px;
         border-radius: 15px;
     }
