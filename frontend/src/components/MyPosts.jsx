@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import "./CreatePost.css";
 
-const API_URL = "https://blogingapp-production.up.railway.app/mypost";
+const API_URL = "https://blogingapp-production.up.railway.app";
 
 const MyPosts = () => {
   const [posts, setPosts] = useState([]);
@@ -22,16 +22,17 @@ const MyPosts = () => {
 
   const token = localStorage.getItem("token");
 
-  // Fetch admin posts
+  // Fetch posts for admin or user
   useEffect(() => {
     fetchPosts();
+    // eslint-disable-next-line
   }, []);
 
   const fetchPosts = async () => {
     setLoading(true);
     setError("");
     try {
-      const res = await axios.get(`${API_URL}/admin/posts`, {
+      const res = await axios.get(`${API_URL}/post`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setPosts(res.data);
@@ -91,7 +92,7 @@ const MyPosts = () => {
       formData.append("tags", form.tags);
       if (form.postImage) formData.append("postImage", form.postImage);
 
-      await axios.put(`${API_URL}/admin/posts/${form.id}`, formData, {
+      await axios.put(`${API_URL}/post/${form.id}`, formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -110,7 +111,7 @@ const MyPosts = () => {
     if (!window.confirm("Are you sure you want to delete this post?")) return;
 
     try {
-      await axios.delete(`${API_URL}/admin/posts/${postId}`, {
+      await axios.delete(`${API_URL}/post/${postId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       fetchPosts();
