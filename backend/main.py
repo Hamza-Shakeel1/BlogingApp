@@ -59,10 +59,10 @@ def root():
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password.encode("utf-8")[:72])
+    return pwd_context.hash(password[:72])
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password.encode("utf-8")[:72], hashed_password)
+    return pwd_context.verify(plain_password[:72], hashed_password)
 
 # ==========================
 # Models
@@ -76,6 +76,10 @@ class User(BaseModel):
     contact: Optional[str] = None
     profileImage: Optional[str] = None
     createdAt: Optional[datetime] = None
+
+class LoginModel(BaseModel):
+    email: str
+    password: str
 
 # ==========================
 # Helpers
@@ -139,7 +143,7 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
         createdAt=user.get("createdAt")
     )
 
-# Optional auth for viewing posts even without login
+# Optional auth for viewing posts
 def get_current_user_optional(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)):
     if not credentials:
         return None
@@ -202,11 +206,11 @@ async def signup(
     return {"message": "User registered successfully", "user": user_helper(new_user)}
 
 @app.post("/login")
-def login(email: str = Body(...), password: str = Body(...)):
-    user = user_collection.find_one({"email": email.lower()})
+def login(login: LoginModel):
+    user = user_collection.find_one({"email": login.email.lower()})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    if not verify_password(password, user["password"]):
+    if not verify_password(login.password, user["password"]):
         raise HTTPException(status_code=401, detail="Incorrect password")
     token_data = {"user_id": str(user["_id"]), "role": user.get("role", "user")}
     access_token = create_access_token(token_data)
@@ -230,30 +234,17 @@ def get_my_profile(current_user: User = Depends(get_current_user)):
     })
 
 # ==========================
-# Admin-only Posts Endpoint
-# ==========================
-@app.get("/admin/posts")
-def get_admin_posts(current_user: User = Depends(get_current_user)):
-    """
-    Admins can see only posts they authored.
-    Regular users cannot access this endpoint.
-    """
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Only admins can access this endpoint")
-
-    admin_posts = post_collection.find({"authorId": current_user.id})
-    return [post_helper(p) for p in admin_posts]
-
-
-# ==========================
-# Post Endpoints
+# Public Post Endpoint
 # ==========================
 @app.get("/post")
-def display_posts(current_user: Optional[User] = Depends(get_current_user_optional)):
-    """Return all posts to everyone."""
+def display_posts():
+    """Everyone can see all posts"""
     posts = post_collection.find()
     return [post_helper(p) for p in posts]
 
+# ==========================
+# Admin-only Post Creation
+# ==========================
 @app.post("/post/create")
 async def create_post(
     title: str = Form(...),
@@ -262,7 +253,6 @@ async def create_post(
     postImage: UploadFile = File(None),
     current_user: User = Depends(get_current_user)
 ):
-    """Only admins can create posts"""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Only admins can create posts")
     post_dict = {
@@ -281,6 +271,9 @@ async def create_post(
     new_post = post_collection.find_one({"_id": result.inserted_id})
     return {"message": "Post created", "post": post_helper(new_post)}
 
+# ==========================
+# Update Post
+# ==========================
 @app.put("/post/{post_id}")
 async def update_post(
     post_id: str,
@@ -290,12 +283,16 @@ async def update_post(
     postImage: UploadFile = File(None),
     current_user: User = Depends(get_current_user)
 ):
-    """Admins and users can only update their own posts"""
-    post = post_collection.find_one({"_id": ObjectId(post_id)})
+    try:
+        obj_id = ObjectId(post_id)
+    except InvalidId:
+        raise HTTPException(status_code=400, detail="Invalid post ID")
+
+    post = post_collection.find_one({"_id": obj_id})
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
 
-    if post["authorId"] != current_user.id:
+    if str(post["authorId"]) != str(current_user.id) and current_user.role != "admin":
         raise HTTPException(status_code=403, detail="You can only update your own posts")
 
     update_data = {}
@@ -307,17 +304,25 @@ async def update_post(
         update_data["postImage"] = base64.b64encode(contents).decode("utf-8")
     update_data["updatedAt"] = datetime.utcnow()
 
-    post_collection.update_one({"_id": ObjectId(post_id)}, {"$set": update_data})
-    updated_post = post_collection.find_one({"_id": ObjectId(post_id)})
+    post_collection.update_one({"_id": obj_id}, {"$set": update_data})
+    updated_post = post_collection.find_one({"_id": obj_id})
     return {"message": "Post updated", "post": post_helper(updated_post)}
 
+# ==========================
+# Delete Post
+# ==========================
 @app.delete("/post/{post_id}")
 def delete_post(post_id: str, current_user: User = Depends(get_current_user)):
-    """Admins and users can only delete their own posts"""
-    post = post_collection.find_one({"_id": ObjectId(post_id)})
+    try:
+        obj_id = ObjectId(post_id)
+    except InvalidId:
+        raise HTTPException(status_code=400, detail="Invalid post ID")
+
+    post = post_collection.find_one({"_id": obj_id})
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
-    if post["authorId"] != current_user.id:
+    if str(post["authorId"]) != str(current_user.id) and current_user.role != "admin":
         raise HTTPException(status_code=403, detail="You can only delete your own posts")
-    post_collection.delete_one({"_id": ObjectId(post_id)})
+
+    post_collection.delete_one({"_id": obj_id})
     return {"message": "Post deleted successfully"}
