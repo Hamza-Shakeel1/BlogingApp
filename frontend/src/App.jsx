@@ -50,7 +50,7 @@ function App() {
 
               {/* All Posts */}
               <Route
-                path="/post"
+                path="/posts"
                 element={
                   <main className={`main-content ${isLoggedIn ? "with-sidebar" : "without-sidebar"}`}>
                     <div className="content-wrapper">
@@ -62,7 +62,7 @@ function App() {
 
               {/* My Posts (Protected) */}
               <Route
-                path="/my-post"
+                path="/my-posts"
                 element={
                   <PrivateRoute>
                     <main className="main-content with-sidebar">
@@ -103,7 +103,7 @@ function App() {
               />
 
               {/* Fallback */}
-              <Route path="*" element={<Navigate to="/post" replace />} />
+              <Route path="*" element={<Navigate to="/posts" replace />} />
             </Routes>
           </div>
         </div>

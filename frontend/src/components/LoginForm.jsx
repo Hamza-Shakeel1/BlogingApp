@@ -1,9 +1,10 @@
+// src/components/Login.jsx
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./Login.css";
 
-const API_URL = "https://blogingapp-production.up.railway.app";
+const API_URL = "https://blogingapp-production.up.railway.app"; // Your backend URL
 
 export default function Login({ setAuth }) {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -11,23 +12,34 @@ export default function Login({ setAuth }) {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
+  // Handle input changes
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    try {
-      const res = await axios.post(`${API_URL}/login`, form);
 
-      // Save in localStorage
+    try {
+      // Send POST request to backend login endpoint
+      const res = await axios.post(
+        `${API_URL}/login`,
+        {
+          email: form.email.toLowerCase().trim(), // normalize email
+          password: form.password,
+        },
+        { headers: { "Content-Type": "application/json" } } // explicitly set JSON
+      );
+
+      // Save authentication info to localStorage
       localStorage.setItem("token", res.data.access_token);
       localStorage.setItem("role", res.data.role);
       localStorage.setItem("userId", res.data.userId);
       localStorage.setItem("user", JSON.stringify(res.data.user));
 
-      // Update App-level auth state
+      // Update parent app state
       setAuth({
         token: res.data.access_token,
         role: res.data.role,
@@ -37,6 +49,7 @@ export default function Login({ setAuth }) {
       setLoading(false);
       alert(res.data.message || "Login successful");
 
+      // Navigate based on role
       if (res.data.role === "admin") {
         navigate("/admin-dashboard");
       } else {
@@ -44,7 +57,11 @@ export default function Login({ setAuth }) {
       }
     } catch (err) {
       setLoading(false);
-      alert(err.response?.data?.detail || "Login failed");
+
+      // Handle possible errors
+      const detail =
+        err.response?.data?.detail || err.response?.data?.message || "Login failed";
+      alert(detail);
     }
   };
 
