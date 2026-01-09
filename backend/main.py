@@ -128,12 +128,24 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
 # ==========================
 from fastapi import Request
 
-async def get_current_user_optional(request: Request):
-    auth = request.headers.get("Authorization")
-    if auth and auth.startswith("Bearer "):
-        credentials = HTTPAuthorizationCredentials(scheme="Bearer", credentials=auth[7:])
-        return get_current_user(credentials)
-    return None
+@app.get("/user/me")
+async def get_my_profile(current_user: User = Depends(get_current_user)):
+    user = user_collection.find_one({"_id": ObjectId(current_user.id)})
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return {
+        "name": user.get("name", ""),
+        "email": user.get("email", ""),
+        "role": user.get("role", ""),
+        "contact": user.get("contact", ""),
+        "profileImage": (
+            f"data:image/jpeg;base64,{user['profileImage']}"
+            if user.get("profileImage")
+            else None
+        )
+    }
 
 # ==========================
 # Post Helper
