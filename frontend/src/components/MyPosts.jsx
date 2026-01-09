@@ -22,7 +22,7 @@ const MyPosts = () => {
 
   const token = localStorage.getItem("token");
 
-  // 🔹 Fetch posts (my posts or all if admin)
+  // 🔹 Fetch admin posts
   useEffect(() => {
     fetchPosts();
   }, []);
@@ -32,33 +32,29 @@ const MyPosts = () => {
       setLoading(true);
       setError("");
 
-      const res = await axios.get(`${API_URL}/post`, {
+      const res = await axios.get(`${API_URL}/post/my`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      // IMPORTANT: backend must return an array
       setPosts(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error("Fetch posts error:", err);
-      setError("Failed to fetch posts");
+      setError("Failed to fetch your posts (admin only)");
     } finally {
       setLoading(false);
     }
   };
 
-  // 🔹 Input handlers
+  // 🔹 Form handlers
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleFileChange = (e) => {
-    setForm((prev) => ({
-      ...prev,
-      postImage: e.target.files[0] || null,
-    }));
+    setForm((prev) => ({ ...prev, postImage: e.target.files[0] || null }));
   };
 
   const resetForm = () => {
@@ -76,7 +72,7 @@ const MyPosts = () => {
   // 🔹 Edit post
   const handleEdit = (post) => {
     setForm({
-      id: post.id,
+      id: post.id, // backend returns "id"
       title: post.title,
       content: post.content,
       tags: post.tags?.join(", ") || "",
@@ -97,14 +93,10 @@ const MyPosts = () => {
       formData.append("title", form.title);
       formData.append("content", form.content);
       formData.append("tags", form.tags);
-      if (form.postImage) {
-        formData.append("postImage", form.postImage);
-      }
+      if (form.postImage) formData.append("postImage", form.postImage);
 
       await axios.put(`${API_URL}/post/${form.id}`, formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       resetForm();
@@ -120,14 +112,10 @@ const MyPosts = () => {
   // 🔹 Delete post
   const handleDelete = async (postId) => {
     if (!window.confirm("Are you sure you want to delete this post?")) return;
-
     try {
       await axios.delete(`${API_URL}/post/${postId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
-
       fetchPosts();
     } catch (err) {
       console.error("Delete error:", err);
@@ -194,7 +182,7 @@ const MyPosts = () => {
         </form>
       ) : (
         <>
-          <h2>My Posts</h2>
+          <h2>Admin Posts</h2>
 
           <div className="posts-list">
             {posts.length === 0 ? (
@@ -219,9 +207,7 @@ const MyPosts = () => {
 
                   <div className="post-actions">
                     <button onClick={() => handleEdit(post)}>Edit</button>
-                    <button onClick={() => handleDelete(post.id)}>
-                      Delete
-                    </button>
+                    <button onClick={() => handleDelete(post.id)}>Delete</button>
                   </div>
                 </div>
               ))
