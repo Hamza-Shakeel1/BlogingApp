@@ -212,7 +212,6 @@ def login(login: LoginModel):
         if not verify_password(login.password, user["password"]):
             raise HTTPException(status_code=401, detail="Incorrect password")
 
-
         token_data = {"user_id": str(user["_id"]), "role": user.get("role", "user")}
         access_token = create_access_token(token_data)
 
@@ -221,12 +220,20 @@ def login(login: LoginModel):
             "access_token": access_token,
             "role": user.get("role", "user"),
             "userId": str(user["_id"]),
-            "user": {"email": user["email"], "name": user.get("name", "")}
+            "user": {
+                "email": user["email"],
+                "name": user.get("name", "")
+            }
         }
+
+    except HTTPException as e:
+        # Let FastAPI handle it properly
+        raise e
 
     except Exception as e:
         print("Login error:", e)
         raise HTTPException(status_code=500, detail="Internal server error")
+
 @app.get("/user/me")
 def get_my_profile(current_user: dict = Depends(get_current_user)):
     return user_helper(current_user)
