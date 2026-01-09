@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import "./CreatePost.css";
 
-const API_URL = "http://blogingapp-production.up.railway.app";
+const API_URL = "http://blogingapp-production.up.railway.app/mypost";
 
 const MyPosts = () => {
   const [posts, setPosts] = useState([]);
