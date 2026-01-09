@@ -22,36 +22,43 @@ const MyPosts = () => {
 
   const token = localStorage.getItem("token");
 
-  // Fetch posts for admin or user
+  // 🔹 Fetch posts (my posts or all if admin)
   useEffect(() => {
     fetchPosts();
-    // eslint-disable-next-line
   }, []);
 
   const fetchPosts = async () => {
-    setLoading(true);
-    setError("");
     try {
+      setLoading(true);
+      setError("");
+
       const res = await axios.get(`${API_URL}/post`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
-      setPosts(res.data);
+
+      // IMPORTANT: backend must return an array
+      setPosts(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
-      console.error(err);
+      console.error("Fetch posts error:", err);
       setError("Failed to fetch posts");
     } finally {
       setLoading(false);
     }
   };
 
-  // Form handlers
+  // 🔹 Input handlers
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleFileChange = (e) => {
-    setForm((prev) => ({ ...prev, postImage: e.target.files?.[0] || null }));
+    setForm((prev) => ({
+      ...prev,
+      postImage: e.target.files[0] || null,
+    }));
   };
 
   const resetForm = () => {
@@ -66,7 +73,7 @@ const MyPosts = () => {
     setShowForm(false);
   };
 
-  // Edit post
+  // 🔹 Edit post
   const handleEdit = (post) => {
     setForm({
       id: post.id,
@@ -79,7 +86,7 @@ const MyPosts = () => {
     setShowForm(true);
   };
 
-  // Update post
+  // 🔹 Update post
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -90,33 +97,40 @@ const MyPosts = () => {
       formData.append("title", form.title);
       formData.append("content", form.content);
       formData.append("tags", form.tags);
-      if (form.postImage) formData.append("postImage", form.postImage);
+      if (form.postImage) {
+        formData.append("postImage", form.postImage);
+      }
 
       await axios.put(`${API_URL}/post/${form.id}`, formData, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       resetForm();
       fetchPosts();
     } catch (err) {
-      console.error(err);
+      console.error("Update error:", err);
       setError("Failed to update post");
     } finally {
       setSaving(false);
     }
   };
 
-  // Delete post
+  // 🔹 Delete post
   const handleDelete = async (postId) => {
     if (!window.confirm("Are you sure you want to delete this post?")) return;
 
     try {
       await axios.delete(`${API_URL}/post/${postId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
+
       fetchPosts();
     } catch (err) {
-      console.error(err);
+      console.error("Delete error:", err);
       alert("Failed to delete post");
     }
   };
@@ -130,6 +144,7 @@ const MyPosts = () => {
       {showForm ? (
         <form className="create-post-form" onSubmit={handleSubmit}>
           <h2>Update Post</h2>
+
           <input
             type="text"
             name="title"
@@ -138,6 +153,7 @@ const MyPosts = () => {
             onChange={handleChange}
             required
           />
+
           <textarea
             name="content"
             placeholder="Content"
@@ -145,6 +161,7 @@ const MyPosts = () => {
             onChange={handleChange}
             required
           />
+
           <input
             type="text"
             name="tags"
@@ -152,6 +169,7 @@ const MyPosts = () => {
             value={form.tags}
             onChange={handleChange}
           />
+
           <input type="file" accept="image/*" onChange={handleFileChange} />
 
           {form.existingImage && !form.postImage && (
@@ -165,7 +183,7 @@ const MyPosts = () => {
             </div>
           )}
 
-          <div style={{ display: "flex", gap: "10px", marginTop: 10 }}>
+          <div style={{ marginTop: 10, display: "flex", gap: 10 }}>
             <button type="submit" disabled={saving}>
               {saving ? "Updating..." : "Update"}
             </button>
@@ -177,6 +195,7 @@ const MyPosts = () => {
       ) : (
         <>
           <h2>My Posts</h2>
+
           <div className="posts-list">
             {posts.length === 0 ? (
               <p>No posts yet.</p>
@@ -185,17 +204,24 @@ const MyPosts = () => {
                 <div key={post.id} className="post-card">
                   <h3>{post.title}</h3>
                   <p>{post.content}</p>
-                  <small>Tags: {post.tags?.join(", ")}</small>
+
+                  {post.tags?.length > 0 && (
+                    <small>Tags: {post.tags.join(", ")}</small>
+                  )}
+
                   {post.postImage && (
                     <img
                       src={`data:image/*;base64,${post.postImage}`}
                       alt={post.title}
-                      style={{ width: "200px" }}
+                      style={{ width: "200px", marginTop: 10 }}
                     />
                   )}
+
                   <div className="post-actions">
                     <button onClick={() => handleEdit(post)}>Edit</button>
-                    <button onClick={() => handleDelete(post.id)}>Delete</button>
+                    <button onClick={() => handleDelete(post.id)}>
+                      Delete
+                    </button>
                   </div>
                 </div>
               ))
