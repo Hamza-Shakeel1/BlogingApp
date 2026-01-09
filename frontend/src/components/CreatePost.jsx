@@ -35,7 +35,7 @@ const CreatePost = () => {
     setError("");
     try {
       // ✅ GET all posts from /post
-      const res = await axios.get(`${API_URL}/post`);
+      const res = await axios.get(`${API_URL}/posts`);
       setPosts(res.data);
     } catch (err) {
       console.error(err);
