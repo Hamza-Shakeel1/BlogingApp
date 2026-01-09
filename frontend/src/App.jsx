@@ -6,10 +6,10 @@ import UserProfile from "./components/UserProfile";
 import MyPosts from "./components/MyPosts";
 import SideBar from "./components/SideBar";
 import Signup from "./components/Signup";
-import Login from "./components/Login"; // fixed import path
+import Login from "./components/LoginForm"; // fixed import path
 import PrivateRoute from "./components/PrivateRoute";
 import Navbar from "./components/Navbar";
-import PostsPage from "./components/PostsPage";
+
 import CreatePost from "./components/CreatePost"; // explicit component for admin
 
 function App() {
@@ -55,7 +55,7 @@ function App() {
                 element={
                   <main className={`main-content ${isLoggedIn ? "with-sidebar" : "without-sidebar"}`}>
                     <div className="content-wrapper">
-                      <PostsPage />
+                      <CreatePost />
                     </div>
                   </main>
                 }
