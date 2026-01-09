@@ -291,7 +291,7 @@ def display_posts(current_user: Optional[User] = Depends(get_current_user_option
         user_posts = post_collection.find({"authorId": current_user.id})
         return [post_helper(p) for p in user_posts]
     return [post_helper(p) for p in post_collection.find()]
-@router.put("/post/{post_id}")
+@app.put("/post/{post_id}")
 async def update_post(
     post_id: str,
     title: str = Form(None),
