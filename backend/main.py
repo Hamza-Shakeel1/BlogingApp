@@ -56,12 +56,12 @@ post_collection = db["post"]
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def hash_password(password: str) -> str:
-    password_bytes = password.encode("utf-8")[:72]
-    return pwd_context.hash(password_bytes)
+    # Truncate to 72 characters (not bytes) before hashing
+    return pwd_context.hash(password[:72])
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    password_bytes = plain_password.encode("utf-8")[:72]
-    return pwd_context.verify(password_bytes, hashed_password)
+    # Truncate to 72 characters to match hashing
+    return pwd_context.verify(plain_password[:72], hashed_password)
 
 # ==========================
 # User Model
