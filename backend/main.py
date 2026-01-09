@@ -203,14 +203,13 @@ class LoginModel(BaseModel):
 # -------------------------------
 @app.post("/login")
 def login(login: LoginModel):
-    user = user_collection.find_one({"email": login.email.lower()})
+    user = user_collection.find_one({"email": login.email.lower()})  # remove await
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
     if not verify_password(login.password, user["password"]):
         raise HTTPException(status_code=401, detail="Incorrect password")
 
-    # Create JWT token
     token_data = {"user_id": str(user["_id"]), "role": user.get("role", "user")}
     access_token = create_access_token(token_data)
 
@@ -221,7 +220,6 @@ def login(login: LoginModel):
         "userId": str(user["_id"]),
         "user": {"email": user["email"], "name": user.get("name", "")}
     }
-
 
 @app.get("/user/me")
 def get_my_profile(current_user: User = Depends(get_current_user)):
