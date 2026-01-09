@@ -233,42 +233,6 @@ async def update_my_profile(
         "message": "Profile updated successfully",
         "user": user_helper(updated_user)
     }
-@app.put("/user/me")
-async def update_my_profile(
-    name: str = Form(None),
-    password: str = Form(None),
-    contact: str = Form(None),
-    profileImage: UploadFile = File(None),
-    current_user: User = Depends(get_current_user)
-):
-    update_data = {}
-
-    if name:
-        update_data["name"] = name
-
-    if password:
-        update_data["password"] = hash_password(password)
-
-    if contact is not None:
-        update_data["contact"] = contact
-
-    if profileImage and profileImage.filename:
-        contents = await profileImage.read()
-        update_data["profileImage"] = base64.b64encode(contents).decode("utf-8")
-
-    if not update_data:
-        raise HTTPException(status_code=400, detail="No fields to update")
-
-    user_collection.update_one(
-        {"_id": ObjectId(current_user.id)},
-        {"$set": update_data}
-    )
-
-    updated_user = user_collection.find_one({"_id": ObjectId(current_user.id)})
-    return {
-        "message": "Profile updated successfully",
-        "user": user_helper(updated_user)
-    }
 
 @app.put("/user/{user_id}")
 async def update_user(
