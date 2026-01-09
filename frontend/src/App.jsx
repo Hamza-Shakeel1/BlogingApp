@@ -6,10 +6,11 @@ import UserProfile from "./components/UserProfile";
 import MyPosts from "./components/MyPosts";
 import SideBar from "./components/SideBar";
 import Signup from "./components/Signup";
-import Login from "./components/LoginForm";
+import Login from "./components/Login"; // fixed import path
 import PrivateRoute from "./components/PrivateRoute";
 import Navbar from "./components/Navbar";
-import PostsPage from "./components/PostsPage"; // updated
+import PostsPage from "./components/PostsPage";
+import CreatePost from "./components/CreatePost"; // explicit component for admin
 
 function App() {
   // Single source of truth for auth
@@ -30,6 +31,7 @@ function App() {
   });
 
   const isLoggedIn = !!auth.token;
+  const hasAdminRole = auth.role === "admin";
 
   return (
     <BrowserRouter>
@@ -59,7 +61,7 @@ function App() {
                 }
               />
 
-              {/* My Posts (Protected) */}
+              {/* My Posts - protected */}
               <Route
                 path="/my-posts"
                 element={
@@ -73,7 +75,7 @@ function App() {
                 }
               />
 
-              {/* User Profile (Protected) */}
+              {/* User Profile - protected */}
               <Route
                 path="/user-profile"
                 element={
@@ -94,7 +96,7 @@ function App() {
                   <PrivateRoute role="admin">
                     <main className="main-content with-sidebar">
                       <div className="content-wrapper">
-                        <PostsPage /> {/* Admin can use the same page to add posts */}
+                        <CreatePost /> {/* explicit admin create component */}
                       </div>
                     </main>
                   </PrivateRoute>

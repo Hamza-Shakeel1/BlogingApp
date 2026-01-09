@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import "./UserProfile.css"; // updated CSS file name
+import "./UserProfile.css"; // CSS file
 
-const API_URL = "GET https://blogingapp-production.up.railway.app"
-
+const API_URL = "https://blogingapp-production.up.railway.app"; // fixed URL
 
 const UserProfile = () => {
   const [loading, setLoading] = useState(true);
@@ -27,9 +26,7 @@ const UserProfile = () => {
   const fetchProfile = async () => {
     try {
       const res = await axios.get(`${API_URL}/user/me`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       setForm((prev) => ({
@@ -51,7 +48,12 @@ const UserProfile = () => {
 
   useEffect(() => {
     fetchProfile();
-  }, []);
+
+    // Cleanup preview URL to avoid memory leaks
+    return () => {
+      if (form.preview && form.profileImage) URL.revokeObjectURL(form.preview);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
@@ -77,13 +79,8 @@ const UserProfile = () => {
     formData.append("name", form.name);
     formData.append("contact", form.contact);
 
-    if (form.password.trim()) {
-      formData.append("password", form.password);
-    }
-
-    if (form.profileImage) {
-      formData.append("profileImage", form.profileImage);
-    }
+    if (form.password.trim()) formData.append("password", form.password);
+    if (form.profileImage) formData.append("profileImage", form.profileImage);
 
     try {
       await axios.put(`${API_URL}/user/me`, formData, {
@@ -139,18 +136,8 @@ const UserProfile = () => {
           className="upn-input"
           required
         />
-        <input
-          type="email"
-          value={form.email}
-          disabled
-          className="upn-input"
-        />
-        <input
-          type="text"
-          value={form.role}
-          disabled
-          className="upn-input"
-        />
+        <input type="email" value={form.email} disabled className="upn-input" />
+        <input type="text" value={form.role} disabled className="upn-input" />
         <input
           type="password"
           name="password"

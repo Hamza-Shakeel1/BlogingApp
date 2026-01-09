@@ -22,9 +22,12 @@ const MyPosts = () => {
   });
 
   const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role"); // "admin" or null
 
+  // Only admins can access
   useEffect(() => {
-    fetchPosts();
+    if (role === "admin") fetchPosts();
+    else setLoading(false);
   }, []);
 
   const fetchPosts = async () => {
@@ -71,6 +74,8 @@ const MyPosts = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (role !== "admin") return;
+
     setSaving(true);
     setError("");
 
@@ -78,7 +83,9 @@ const MyPosts = () => {
       const formData = new FormData();
       formData.append("title", form.title);
       formData.append("content", form.content);
-      formData.append("tags", form.tags);
+      // Convert tags string to array
+      const tagsArray = form.tags.split(",").map((t) => t.trim()).filter(Boolean);
+      formData.append("tags", JSON.stringify(tagsArray));
       if (form.postImage) formData.append("postImage", form.postImage);
 
       await axios.put(`${API_URL}/post/${form.id}`, formData, {
@@ -108,9 +115,11 @@ const MyPosts = () => {
     }
   };
 
-  const getImageUrl = (post) => post?.postImage ? `data:image/*;base64,${post.postImage}` : null;
+  const getImageUrl = (imageBase64) =>
+    imageBase64 ? `data:image/*;base64,${imageBase64}` : null;
 
   if (loading) return <p>Loading posts...</p>;
+  if (role !== "admin") return <p>You do not have access to this page.</p>;
 
   return (
     <div className="create-post-container">
@@ -121,16 +130,24 @@ const MyPosts = () => {
           <h2>Update Post</h2>
           <input type="text" name="title" value={form.title} onChange={handleChange} required />
           <textarea name="content" value={form.content} onChange={handleChange} required />
-          <input type="text" name="tags" value={form.tags} onChange={handleChange} placeholder="Tags (comma separated)" />
+          <input
+            type="text"
+            name="tags"
+            value={form.tags}
+            onChange={handleChange}
+            placeholder="Tags (comma separated)"
+          />
           <input type="file" accept="image/*" onChange={handleFileChange} />
           {form.existingImage && !form.postImage && (
             <div style={{ marginTop: 10 }}>
               <p>Current Image:</p>
-              <img src={getImageUrl(form)} alt="current" style={{ width: "200px" }} />
+              <img src={getImageUrl(form.existingImage)} alt="current" style={{ width: "200px" }} />
             </div>
           )}
           <div style={{ marginTop: 10, display: "flex", gap: 10 }}>
-            <button type="submit" disabled={saving}>{saving ? "Updating..." : "Update"}</button>
+            <button type="submit" disabled={saving}>
+              {saving ? "Updating..." : "Update"}
+            </button>
             <button type="button" onClick={resetForm}>Cancel</button>
           </div>
         </form>
@@ -143,7 +160,11 @@ const MyPosts = () => {
         ) : (
           posts.map((post) => (
             <div key={post.id} className="post-card">
-              {getImageUrl(post) ? <img src={getImageUrl(post)} alt={post.title} /> : <div className="placeholder-image">No Image</div>}
+              {getImageUrl(post.postImage) ? (
+                <img src={getImageUrl(post.postImage)} alt={post.title} />
+              ) : (
+                <div className="placeholder-image">No Image</div>
+              )}
               <h3>{post.title}</h3>
               <p>{post.content.length > 50 ? post.content.slice(0, 50) + "..." : post.content}</p>
               <small>Tags: {post.tags?.join(", ")}</small>

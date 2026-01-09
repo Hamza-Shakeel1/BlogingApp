@@ -14,10 +14,14 @@ const SideBar = ({ auth }) => {
         All Posts
       </Link>
 
-      <Link to="/my-posts" className="sidebar-link">
-        My Posts
-      </Link>
+      {/* Only admin can see 'My Posts' */}
+      {user?.role === "admin" && (
+        <Link to="/my-posts" className="sidebar-link">
+          My Posts
+        </Link>
+      )}
 
+      {/* Only admin can see Admin Dashboard */}
       {user?.role === "admin" && (
         <Link to="/admin-dashboard" className="sidebar-link">
           Admin Dashboard
