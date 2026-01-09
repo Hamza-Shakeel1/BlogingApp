@@ -32,7 +32,7 @@ const MyPosts = () => {
     setLoading(true);
     setError("");
     try {
-      const res = await axios.get(`${API_URL}/post`, {
+      const res = await axios.get(`${API_URL}/admin/post`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setPosts(res.data);
