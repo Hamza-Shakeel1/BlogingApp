@@ -4,13 +4,12 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import UserProfile from "./components/UserProfile";
 import MyPosts from "./components/MyPosts";
+import CreatePost from "./components/CreatePost";
 import SideBar from "./components/SideBar";
 import Signup from "./components/Signup";
-import Login from "./components/LoginForm"; // fixed import path
+import Login from "./components/Login";
 import PrivateRoute from "./components/PrivateRoute";
 import Navbar from "./components/Navbar";
-
-import CreatePost from "./components/CreatePost"; // explicit component for admin
 
 function App() {
   // Single source of truth for auth
@@ -31,7 +30,6 @@ function App() {
   });
 
   const isLoggedIn = !!auth.token;
-  const hasAdminRole = auth.role === "admin";
 
   return (
     <BrowserRouter>
@@ -50,55 +48,34 @@ function App() {
               <Route path="/login" element={<Login setAuth={setAuth} />} />
 
               {/* All Posts - visible to everyone */}
-              <Route
-                path="/posts"
-                element={
-                  <main className={`main-content ${isLoggedIn ? "with-sidebar" : "without-sidebar"}`}>
-                    <div className="content-wrapper">
-                      <CreatePost />
-                    </div>
-                  </main>
-                }
-              />
+              <Route path="/posts" element={<CreatePost />} />
 
-              {/* My Posts - protected */}
+              {/* My Posts - Protected */}
               <Route
                 path="/my-posts"
                 element={
                   <PrivateRoute>
-                    <main className="main-content with-sidebar">
-                      <div className="content-wrapper">
-                        <MyPosts />
-                      </div>
-                    </main>
+                    <MyPosts />
                   </PrivateRoute>
                 }
               />
 
-              {/* User Profile - protected */}
+              {/* User Profile - Protected */}
               <Route
                 path="/user-profile"
                 element={
                   <PrivateRoute>
-                    <main className="main-content with-sidebar">
-                      <div className="content-wrapper">
-                        <UserProfile />
-                      </div>
-                    </main>
+                    <UserProfile />
                   </PrivateRoute>
                 }
               />
 
-              {/* Admin Create Post */}
+              {/* Admin Create Post - Protected + Admin Only */}
               <Route
                 path="/create-post"
                 element={
                   <PrivateRoute role="admin">
-                    <main className="main-content with-sidebar">
-                      <div className="content-wrapper">
-                        <CreatePost /> {/* explicit admin create component */}
-                      </div>
-                    </main>
+                    <CreatePost />
                   </PrivateRoute>
                 }
               />
