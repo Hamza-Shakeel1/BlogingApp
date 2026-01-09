@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import "./CreatePost.css";
 
-// ✅ Correct backend URL
+// ✅ Base backend URL
 const API_URL = "https://blogingapp-production.up.railway.app";
 
 const CreatePost = () => {
@@ -34,11 +34,12 @@ const CreatePost = () => {
     setLoading(true);
     setError("");
     try {
+      // ✅ GET all posts from /post
       const res = await axios.get(`${API_URL}/post`);
       setPosts(res.data);
     } catch (err) {
       console.error(err);
-      setError("Failed to fetch post");
+      setError("Failed to fetch posts");
     } finally {
       setLoading(false);
     }
@@ -81,8 +82,12 @@ const CreatePost = () => {
 
       if (form.postImage) formData.append("postImage", form.postImage);
 
+      // ✅ POST to /post/create
       await axios.post(`${API_URL}/post/create`, formData, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
       });
 
       resetForm();
