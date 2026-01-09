@@ -21,11 +21,12 @@ origins = [
     "https://bloging-app-nsy9.vercel.app",  # deployed frontend
 ]
 
+# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
+    allow_origins=origins,          # only allow these origins
+    allow_credentials=True,         # needed for Authorization headers
+    allow_methods=["*"],            # allow all HTTP methods: GET, POST, PUT, DELETE
     allow_headers=["*"],
 )
 
