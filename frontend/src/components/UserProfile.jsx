@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import "./UserProfile.css"; // updated CSS file name
+import "./UserProfile.css";
 
-const API_URL = "https://blogingapp-production.up.railway.app/user";
+/* ✅ BASE API URL (FIXED) */
+const API_URL = "https://blogingapp-production.up.railway.app";
 
 const UserProfileNew = () => {
   const [loading, setLoading] = useState(true);
@@ -22,7 +23,9 @@ const UserProfileNew = () => {
 
   const token = localStorage.getItem("token");
 
-  // Fetch logged-in user
+  /* ===============================
+     Fetch Logged-in User
+  ================================ */
   const fetchProfile = async () => {
     try {
       const res = await axios.get(`${API_URL}/user/me`, {
@@ -33,12 +36,14 @@ const UserProfileNew = () => {
 
       setForm((prev) => ({
         ...prev,
-        name: res.data.name,
-        email: res.data.email,
-        role: res.data.role,
+        name: res.data.name || "",
+        email: res.data.email || "",
+        role: res.data.role || "",
         contact: res.data.contact || "",
         preview: res.data.profileImage
-          ? `data:image/jpeg;base64,${res.data.profileImage}`
+          ? res.data.profileImage.startsWith("http")
+            ? res.data.profileImage
+            : `${API_URL}/uploads/${res.data.profileImage}`
           : null,
       }));
     } catch (err) {
@@ -48,10 +53,32 @@ const UserProfileNew = () => {
     }
   };
 
+  /* ===============================
+     Initial Load + Token Check
+  ================================ */
   useEffect(() => {
+    if (!token) {
+      setError("Not authenticated. Please login again.");
+      setLoading(false);
+      return;
+    }
     fetchProfile();
   }, []);
 
+  /* ===============================
+     Cleanup Preview URL
+  ================================ */
+  useEffect(() => {
+    return () => {
+      if (form.preview?.startsWith("blob:")) {
+        URL.revokeObjectURL(form.preview);
+      }
+    };
+  }, [form.preview]);
+
+  /* ===============================
+     Handle Input Change
+  ================================ */
   const handleChange = (e) => {
     const { name, value, files } = e.target;
 
@@ -66,6 +93,9 @@ const UserProfileNew = () => {
     }
   };
 
+  /* ===============================
+     Update Profile
+  ================================ */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -88,7 +118,6 @@ const UserProfileNew = () => {
       await axios.put(`${API_URL}/user/me`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
         },
       });
 
@@ -114,10 +143,14 @@ const UserProfileNew = () => {
       <form onSubmit={handleSubmit} className="upn-form">
         <div className="upn-avatar-wrapper">
           {form.preview ? (
-            <img src={form.preview} alt="Profile" className="upn-avatar-img" />
+            <img
+              src={form.preview}
+              alt="Profile"
+              className="upn-avatar-img"
+            />
           ) : (
             <div className="upn-avatar-placeholder">
-              {form.name[0]?.toUpperCase()}
+              {form.name?.charAt(0).toUpperCase()}
             </div>
           )}
         </div>
@@ -138,18 +171,21 @@ const UserProfileNew = () => {
           className="upn-input"
           required
         />
+
         <input
           type="email"
           value={form.email}
           disabled
           className="upn-input"
         />
+
         <input
           type="text"
           value={form.role}
           disabled
           className="upn-input"
         />
+
         <input
           type="password"
           name="password"
@@ -158,6 +194,7 @@ const UserProfileNew = () => {
           onChange={handleChange}
           className="upn-input"
         />
+
         <input
           type="text"
           name="contact"
