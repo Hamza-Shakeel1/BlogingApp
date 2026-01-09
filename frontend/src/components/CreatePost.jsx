@@ -4,7 +4,7 @@ import axios from "axios";
 import "./CreatePost.css";
 
 // ✅ Correct backend URL
-const API_URL = "https://blogingapp-production.up.railway.app";
+const API_URL = "https://blogingapp-production.up.railway.app/post";
 
 const CreatePost = () => {
   const [posts, setPosts] = useState([]);
