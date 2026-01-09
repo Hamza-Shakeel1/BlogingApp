@@ -193,17 +193,38 @@ async def create_user(
     new_user = user_collection.find_one({"_id": result.inserted_id})
     return {"message": "User registered successfully", "user": user_helper(new_user)}
 
-@app.post("/login")
-def login(email: str = Body(...), password: str = Body(...)):
-    user = user_collection.find_one({"email": email})
-    if not user:
-        raise HTTPException(status_code=400, detail="User not found")
-    if not verify_password(password, user["password"]):
-        raise HTTPException(status_code=400, detail="Incorrect password")
-    token_data = {"user_id": str(user["_id"]), "role": user["role"]}
-    token = create_access_token(token_data)
-    return {"access_token": token, "role": user["role"], "userId": str(user["_id"]), "message": f"Logged in as {user['role']}"}
+class LoginModel(BaseModel):
+    email: str
+    password: str
 
+# -------------------------------
+# Routes
+# -------------------------------
+@app.post("/login")
+async def login(login: LoginModel):
+    user = await user_collection.find_one({"email": login.email.lower()})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if not verify_password(login.password, user["password"]):
+        raise HTTPException(status_code=401, detail="Incorrect password")
+
+    # Create JWT token
+    token_data = {"user_id": str(user["_id"]), "role": user.get("role", "user")}
+    access_token = create_access_token(token_data)
+
+    return {
+        "message": "Login successful",
+        "access_token": access_token,
+        "role": user.get("role", "user"),
+        "userId": str(user["_id"]),
+        "user": {"email": user["email"], "name": user.get("name", "")}
+    }
+
+# Optional GET for debugging
+@app.get("/login")
+async def login_get():
+    return {"message": "Use POST to login"}
 @app.get("/user/me")
 def get_my_profile(current_user: User = Depends(get_current_user)):
     return user_helper({
