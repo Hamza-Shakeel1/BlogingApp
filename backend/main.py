@@ -38,7 +38,7 @@ post_collection = db["post"]
 # ==========================
 origins = [
     "http://localhost:5173",
-    "http://bloging-hhk25sfjw-hamzas-projects-30a3d32b.vercel.app"
+    "https://bloging-hhk25sfjw-hamzas-projects-30a3d32b.vercel.app"
 ]
 
 app.add_middleware(
