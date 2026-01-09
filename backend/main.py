@@ -56,11 +56,12 @@ post_collection = db["post"]
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def hash_password(password: str) -> str:
-    # Truncate to 72 characters (not bytes) before hashing
+    # Only take first 72 characters
     return pwd_context.hash(password[:72])
 
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    # Truncate to 72 characters to match hashing
+    # Only take first 72 characters
     return pwd_context.verify(plain_password[:72], hashed_password)
 
 # ==========================
