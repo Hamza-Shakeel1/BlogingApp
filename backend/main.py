@@ -34,17 +34,19 @@ db = client["Bloging"] if client else None
 # ==========================
 # CORS Middleware
 # ==========================
+origins = [
+    "http://localhost:5173",                   # for local development
+    "https://bloging-app-nsy9.vercel.app",     # your deployed Vercel frontend
+]
+
+# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "https://bloging-app-ruby.vercel.app",
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=origins,      # allow only the above origins
+    allow_credentials=True,     # allow cookies/auth headers
+    allow_methods=["*"],        # allow all HTTP methods (GET, POST, etc.)
+    allow_headers=["*"],        # allow all headers (Content-Type, Authorization, etc.)
 )
-
 
 @app.get("/")
 def root():
