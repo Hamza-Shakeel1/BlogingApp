@@ -3,15 +3,31 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pymongo import MongoClient
 from bson import ObjectId
-from pydantic import BaseModel, Field, EmailStr
+from bson.errors import InvalidId
+from pydantic import BaseModel, EmailStr
 from typing import List, Optional
 from datetime import datetime, timedelta
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 import base64
-from bson.errors import InvalidId
 
+# ==========================
+# App & CORS
+# ==========================
 app = FastAPI(title="Blog API")
+
+origins = [
+    "http://localhost:5173",                 # local dev
+    "https://bloging-app-nsy9.vercel.app",  # deployed frontend
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # ==========================
 # MongoDB Connection
@@ -30,27 +46,8 @@ except Exception as e:
     client = None
 
 db = client["Bloging"] if client else None
-
-# ==========================
-# CORS Middleware
-# ==========================
-origins = [
-    "http://localhost:5173",                   # for local development
-    "https://bloging-app-nsy9.vercel.app",     # your deployed Vercel frontend
-]
-
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,      # allow only the above origins
-    allow_credentials=True,     # allow cookies/auth headers
-    allow_methods=["*"],        # allow all HTTP methods (GET, POST, etc.)
-    allow_headers=["*"],        # allow all headers (Content-Type, Authorization, etc.)
-)
-
-@app.get("/")
-def root():
-    return {"message": "Backend is working"}
+user_collection = db["user"]
+post_collection = db["post"]
 
 # ==========================
 # Password Hashing
@@ -78,8 +75,6 @@ class User(BaseModel):
     profileImage: Optional[str] = None
     createdAt: Optional[datetime] = None
 
-user_collection = db["user"]
-
 def user_helper(user):
     return {
         "id": str(user["_id"]),
@@ -100,8 +95,7 @@ def create_access_token(data: dict):
     to_encode = data.copy()
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     token = credentials.credentials
@@ -112,11 +106,10 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
             raise HTTPException(status_code=401, detail="Invalid token")
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
-
+    
     user = user_collection.find_one({"_id": ObjectId(user_id)})
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
-
     return User(
         id=str(user["_id"]),
         name=user["name"],
@@ -127,6 +120,40 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
         profileImage=user.get("profileImage"),
         createdAt=user.get("createdAt")
     )
+
+# ==========================
+# Optional auth dependency
+# ==========================
+from fastapi import Request
+
+async def get_current_user_optional(request: Request):
+    auth = request.headers.get("Authorization")
+    if auth and auth.startswith("Bearer "):
+        credentials = HTTPAuthorizationCredentials(scheme="Bearer", credentials=auth[7:])
+        return get_current_user(credentials)
+    return None
+
+# ==========================
+# Post Helper
+# ==========================
+def post_helper(post):
+    return {
+        "id": str(post["_id"]),
+        "title": post["title"],
+        "content": post["content"],
+        "authorId": post["authorId"],
+        "tags": post.get("tags", []),
+        "postImage": post.get("postImage"),
+        "createdAt": post.get("createdAt"),
+        "updatedAt": post.get("updatedAt")
+    }
+
+# ==========================
+# Root
+# ==========================
+@app.get("/")
+def root():
+    return {"message": "Backend is working"}
 
 # ==========================
 # User Endpoints
@@ -149,7 +176,6 @@ async def create_user(
         raise HTTPException(status_code=400, detail="Email already exists")
 
     hashed_password = hash_password(password)
-
     user_dict = {
         "name": name,
         "email": email,
@@ -159,31 +185,23 @@ async def create_user(
         "profileImage": None,
         "createdAt": datetime.utcnow()
     }
-
     if profileImage and profileImage.filename:
         contents = await profileImage.read()
         user_dict["profileImage"] = base64.b64encode(contents).decode("utf-8")
 
     result = user_collection.insert_one(user_dict)
     new_user = user_collection.find_one({"_id": result.inserted_id})
-
-    return {
-        "message": "User registered successfully",
-        "user": user_helper(new_user)
-    }
+    return {"message": "User registered successfully", "user": user_helper(new_user)}
 
 @app.post("/login")
-
 def login(email: str = Body(...), password: str = Body(...)):
     user = user_collection.find_one({"email": email})
     if not user:
         raise HTTPException(status_code=400, detail="User not found")
     if not verify_password(password, user["password"]):
         raise HTTPException(status_code=400, detail="Incorrect password")
-
     token_data = {"user_id": str(user["_id"]), "role": user["role"]}
     token = create_access_token(token_data)
-    print("LOGIN API HIT") 
     return {"access_token": token, "role": user["role"], "userId": str(user["_id"]), "message": f"Logged in as {user['role']}"}
 
 @app.get("/user/me")
@@ -197,6 +215,7 @@ def get_my_profile(current_user: User = Depends(get_current_user)):
         "profileImage": current_user.profileImage,
         "createdAt": current_user.createdAt
     })
+
 @app.put("/user/me")
 async def update_my_profile(
     name: str = Form(None),
@@ -206,149 +225,21 @@ async def update_my_profile(
     current_user: User = Depends(get_current_user)
 ):
     update_data = {}
-
-    if name:
-        update_data["name"] = name
-
-    if password:
-        update_data["password"] = hash_password(password)
-
-    if contact is not None:
-        update_data["contact"] = contact
-
+    if name: update_data["name"] = name
+    if password: update_data["password"] = hash_password(password)
+    if contact is not None: update_data["contact"] = contact
     if profileImage and profileImage.filename:
         contents = await profileImage.read()
         update_data["profileImage"] = base64.b64encode(contents).decode("utf-8")
-
     if not update_data:
         raise HTTPException(status_code=400, detail="No fields to update")
-
-    user_collection.update_one(
-        {"_id": ObjectId(current_user.id)},
-        {"$set": update_data}
-    )
-
+    user_collection.update_one({"_id": ObjectId(current_user.id)}, {"$set": update_data})
     updated_user = user_collection.find_one({"_id": ObjectId(current_user.id)})
-    return {
-        "message": "Profile updated successfully",
-        "user": user_helper(updated_user)
-    }
+    return {"message": "Profile updated successfully", "user": user_helper(updated_user)}
 
-@app.put("/user/{user_id}")
-async def update_user(
-    user_id: str,
-    name: str = Form(None),
-    email: str = Form(None),
-    role: str = Form(None),
-    password: str = Form(None),
-    contact: str = Form(None),
-    profileImage: UploadFile = File(None)
-):
-    update_data = {}
-    if name: update_data["name"] = name
-    if email: update_data["email"] = email
-    if role: update_data["role"] = role
-    if password: update_data["password"] = hash_password(password)
-    if contact: update_data["contact"] = contact
-    if profileImage:
-        contents = await profileImage.read()
-        update_data["profileImage"] = base64.b64encode(contents).decode("utf-8")
-
-    if not update_data:
-        raise HTTPException(status_code=400, detail="No fields to update")
-
-    result = user_collection.update_one({"_id": ObjectId(user_id)}, {"$set": update_data})
-    if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="User not found")
-    return {"message": "User updated successfully", "user": user_helper(user_collection.find_one({"_id": ObjectId(user_id)}))}
-
-@app.delete("/user/{user_id}")
-def delete_user(user_id: str):
-    result = user_collection.delete_one({"_id": ObjectId(user_id)})
-    if result.deleted_count == 0:
-        return {"message": "User not found"}
-    return {"message": "User deleted"}
-@app.get("/admin/posts")
-def get_admin_posts(current_user: User = Depends(get_current_user)):
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Only admins can access this endpoint")
-
-    admin_posts = post_collection.find({"authorId": current_user.id})
-    return [post_helper(p) for p in admin_posts]
-@app.delete("/admin/posts/{post_id}")
-def delete_admin_post(post_id: str, current_user: User = Depends(get_current_user)):
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Only admins can delete posts")
-
-    try:
-        post_obj_id = ObjectId(post_id)
-    except InvalidId:
-        raise HTTPException(status_code=400, detail="Invalid post ID")
-
-    post = post_collection.find_one({"_id": post_obj_id})
-    if not post:
-        raise HTTPException(status_code=404, detail="Post not found")
-
-    if post["authorId"] != current_user.id:
-        raise HTTPException(status_code=403, detail="You can only delete your own posts")
-
-    post_collection.delete_one({"_id": post_obj_id})
-    return {"message": "Post deleted successfully"}
-
-
-@app.put("/admin/posts/{post_id}")
-async def update_admin_post(
-    post_id: str,
-    title: str = Form(None),
-    content: str = Form(None),
-    tags: str = Form(None),
-    postImage: UploadFile = File(None),
-    current_user: User = Depends(get_current_user)
-):
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Only admins can update posts")
-
-    post = post_collection.find_one({"_id": ObjectId(post_id)})
-    if not post:
-        raise HTTPException(status_code=404, detail="Post not found")
-
-    if post["authorId"] != current_user.id:
-        raise HTTPException(status_code=403, detail="You can only update your own posts")
-
-    update_data = {}
-    if title: update_data["title"] = title
-    if content: update_data["content"] = content
-    if tags: update_data["tags"] = [t.strip() for t in tags.split(",")]
-    if postImage and postImage.filename:
-        contents = await postImage.read()
-        update_data["postImage"] = base64.b64encode(contents).decode("utf-8")
-    update_data["updatedAt"] = datetime.utcnow()
-
-    if not update_data:
-        raise HTTPException(status_code=400, detail="No fields to update")
-
-    post_collection.update_one({"_id": ObjectId(post_id)}, {"$set": update_data})
-    updated_post = post_collection.find_one({"_id": ObjectId(post_id)})
-    return {"message": "Post updated", "post": post_helper(updated_post)}
 # ==========================
 # Post Endpoints
 # ==========================
-post_collection = db["post"]
-
-def post_helper(post):
-    return {
-        "id": str(post["_id"]),
-        "title": post["title"],
-        "content": post["content"],
-        "authorId": post["authorId"],
-        "tags": post["tags"],
-        "postImage": post.get("postImage"),
-        "createdAt": post["createdAt"],
-        "updatedAt": post["updatedAt"]
-    }
-
-# Create Post
-
 @app.post("/post/create")
 async def create_post(
     title: str = Form(...),
@@ -359,7 +250,6 @@ async def create_post(
 ):
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Only admins can create posts")
-
     post_dict = {
         "title": title,
         "content": content,
@@ -369,16 +259,20 @@ async def create_post(
         "createdAt": datetime.utcnow(),
         "updatedAt": datetime.utcnow()
     }
-
     if postImage and postImage.filename:
         contents = await postImage.read()
         post_dict["postImage"] = base64.b64encode(contents).decode("utf-8")
-
     result = post_collection.insert_one(post_dict)
     new_post = post_collection.find_one({"_id": result.inserted_id})
     return {"message": "Post created", "post": post_helper(new_post)}
 
-# Update Post
+@app.get("/post")
+def display_posts(current_user: Optional[User] = Depends(get_current_user_optional)):
+    if current_user:
+        user_posts = post_collection.find({"authorId": current_user.id})
+        return [post_helper(p) for p in user_posts]
+    return [post_helper(p) for p in post_collection.find()]
+
 @app.put("/post/{post_id}")
 async def update_post(
     post_id: str,
@@ -391,11 +285,8 @@ async def update_post(
     post = post_collection.find_one({"_id": ObjectId(post_id)})
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
-
-    # Only admins or the original author can update
     if current_user.role != "admin" and post["authorId"] != current_user.id:
-        raise HTTPException(status_code=403, detail="You are not allowed to update this post")
-
+        raise HTTPException(status_code=403, detail="Not allowed to update this post")
     update_data = {}
     if title: update_data["title"] = title
     if content: update_data["content"] = content
@@ -404,47 +295,18 @@ async def update_post(
         contents = await postImage.read()
         update_data["postImage"] = base64.b64encode(contents).decode("utf-8")
     update_data["updatedAt"] = datetime.utcnow()
-
     if not update_data:
         raise HTTPException(status_code=400, detail="No fields to update")
-
     post_collection.update_one({"_id": ObjectId(post_id)}, {"$set": update_data})
     updated_post = post_collection.find_one({"_id": ObjectId(post_id)})
     return {"message": "Post updated", "post": post_helper(updated_post)}
 
-# Delete Post
 @app.delete("/post/{post_id}")
 def delete_post(post_id: str, current_user: User = Depends(get_current_user)):
-    # Only admin can delete
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Only admins can delete posts")
-
-    # Validate post_id
-    try:
-        post_obj_id = ObjectId(post_id)
-    except InvalidId:
-        raise HTTPException(status_code=400, detail="Invalid post ID")
-
-    # Find post
-    post = post_collection.find_one({"_id": post_obj_id})
+    post = post_collection.find_one({"_id": ObjectId(post_id)})
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
-
-    # Ensure admin is the author
-    if post["authorId"] != current_user.id:
-        raise HTTPException(status_code=403, detail="You can only delete your own posts")
-
-    # Delete post
-    post_collection.delete_one({"_id": post_obj_id})
+    if current_user.role != "admin" and post["authorId"] != current_user.id:
+        raise HTTPException(status_code=403, detail="Not allowed to delete this post")
+    post_collection.delete_one({"_id": ObjectId(post_id)})
     return {"message": "Post deleted successfully"}
-# Display Posts
-@app.get("/post")
-def display_posts():
-    return [post_helper(p) for p in post_collection.find()]
-
-
-@app.get("/post")
-def display_posts(current_user: User = Depends(get_current_user)):
-    # Fetch only posts created by this user
-    user_posts = post_collection.find({"authorId": current_user.id})
-    return [post_helper(p) for p in user_posts]
