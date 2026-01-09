@@ -1,4 +1,3 @@
-// src/components/MyPosts.jsx
 import { useEffect, useState } from "react";
 import axios from "axios";
 import "./CreatePost.css";
@@ -12,8 +11,6 @@ const MyPosts = () => {
   const [error, setError] = useState("");
 
   const [showForm, setShowForm] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-
   const [form, setForm] = useState({
     id: null,
     title: "",
@@ -24,51 +21,36 @@ const MyPosts = () => {
   });
 
   const token = localStorage.getItem("token");
-  const userId = localStorage.getItem("userId");
 
-  // 🔹 Fetch posts
+  // Fetch admin posts
   useEffect(() => {
-    fetchMyPosts();
+    fetchPosts();
   }, []);
 
-  const fetchMyPosts = async () => {
+  const fetchPosts = async () => {
     setLoading(true);
     setError("");
     try {
-      const res = await axios.get(`${API_URL}/post`, {
+      const res = await axios.get(`${API_URL}/admin/posts`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
-      // Normalize IDs and keep postImage intact
-      const allPosts = res.data.map((post) => ({
-        ...post,
-        id: post.id || post._id || null,
-        postImage: post.postImage || null,
-      }));
-
-      // Filter only the current user's posts
-      const myPosts = allPosts.filter((post) => post.authorId === userId);
-
-      setPosts(myPosts);
+      setPosts(res.data);
     } catch (err) {
       console.error(err);
-      setError("Failed to fetch your posts");
+      setError("Failed to fetch posts");
     } finally {
       setLoading(false);
     }
   };
 
-  // 🔹 Form handlers
+  // Form handlers
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleFileChange = (e) => {
-    setForm((prev) => ({
-      ...prev,
-      postImage: e.target.files?.[0] || null,
-    }));
+    setForm((prev) => ({ ...prev, postImage: e.target.files?.[0] || null }));
   };
 
   const resetForm = () => {
@@ -80,25 +62,23 @@ const MyPosts = () => {
       postImage: null,
       existingImage: null,
     });
-    setIsEditing(false);
     setShowForm(false);
   };
 
-  // 🔹 Edit post
+  // Edit post
   const handleEdit = (post) => {
     setForm({
       id: post.id,
-      title: post.title || "",
-      content: post.content || "",
+      title: post.title,
+      content: post.content,
       tags: post.tags?.join(", ") || "",
       postImage: null,
       existingImage: post.postImage || null,
     });
-    setIsEditing(true);
     setShowForm(true);
   };
 
-  // 🔹 Update post
+  // Update post
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -109,17 +89,14 @@ const MyPosts = () => {
       formData.append("title", form.title);
       formData.append("content", form.content);
       formData.append("tags", form.tags);
+      if (form.postImage) formData.append("postImage", form.postImage);
 
-      if (form.postImage) {
-        formData.append("postImage", form.postImage);
-      }
-
-      await axios.put(`${API_URL}/post/${form.id}`, formData, {
+      await axios.put(`${API_URL}/admin/posts/${form.id}`, formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       resetForm();
-      fetchMyPosts();
+      fetchPosts();
     } catch (err) {
       console.error(err);
       setError("Failed to update post");
@@ -128,33 +105,30 @@ const MyPosts = () => {
     }
   };
 
-  // 🔹 Delete post
-  const handleDelete = async (post) => {
+  // Delete post
+  const handleDelete = async (postId) => {
     if (!window.confirm("Are you sure you want to delete this post?")) return;
 
     try {
-      await axios.delete(`${API_URL}/post/${post.id}`, {
+      await axios.delete(`${API_URL}/admin/posts/${postId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
-      fetchMyPosts();
+      fetchPosts();
     } catch (err) {
       console.error(err);
-      alert("You are not allowed to delete this post");
+      alert("Failed to delete post");
     }
   };
 
-  if (loading) return <p>Loading your posts...</p>;
+  if (loading) return <p>Loading posts...</p>;
 
   return (
     <div className="create-post-container">
       {error && <p style={{ color: "red" }}>{error}</p>}
 
-      {/* 🔹 Edit form */}
       {showForm ? (
         <form className="create-post-form" onSubmit={handleSubmit}>
           <h2>Update Post</h2>
-
           <input
             type="text"
             name="title"
@@ -163,7 +137,6 @@ const MyPosts = () => {
             onChange={handleChange}
             required
           />
-
           <textarea
             name="content"
             placeholder="Content"
@@ -171,7 +144,6 @@ const MyPosts = () => {
             onChange={handleChange}
             required
           />
-
           <input
             type="text"
             name="tags"
@@ -179,7 +151,6 @@ const MyPosts = () => {
             value={form.tags}
             onChange={handleChange}
           />
-
           <input type="file" accept="image/*" onChange={handleFileChange} />
 
           {form.existingImage && !form.postImage && (
@@ -207,14 +178,13 @@ const MyPosts = () => {
           <h2>My Posts</h2>
           <div className="posts-list">
             {posts.length === 0 ? (
-              <p>You have not created any posts.</p>
+              <p>No posts yet.</p>
             ) : (
               posts.map((post) => (
                 <div key={post.id} className="post-card">
                   <h3>{post.title}</h3>
                   <p>{post.content}</p>
                   <small>Tags: {post.tags?.join(", ")}</small>
-
                   {post.postImage && (
                     <img
                       src={`data:image/*;base64,${post.postImage}`}
@@ -222,10 +192,9 @@ const MyPosts = () => {
                       style={{ width: "200px" }}
                     />
                   )}
-
                   <div className="post-actions">
                     <button onClick={() => handleEdit(post)}>Edit</button>
-                    <button onClick={() => handleDelete(post)}>Delete</button>
+                    <button onClick={() => handleDelete(post.id)}>Delete</button>
                   </div>
                 </div>
               ))

@@ -3,8 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pymongo import MongoClient
 from bson import ObjectId
-from pydantic import BaseModel, EmailStr
-from typing import Optional
+from pydantic import BaseModel, Field, EmailStr
+from typing import List, Optional
 from datetime import datetime, timedelta
 from passlib.context import CryptContext
 from jose import JWTError, jwt
@@ -13,20 +13,26 @@ from bson.errors import InvalidId
 
 app = FastAPI(title="Blog API")
 
-
 # ==========================
-# MongoDB & JWT
+# MongoDB Connection
 # ==========================
 MONGO_URI = "mongodb+srv://hamzashakeel219:hamza123@cluster0.hcr7m.mongodb.net/Bloging?retryWrites=true&w=majority"
 SECRET_KEY = "supersecretkey123"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
+ACCESS_TOKEN_EXPIRE_MINUTES = 60    
 
-client = MongoClient(MONGO_URI)
-db = client["Bloging"]
+try:
+    client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
+    client.admin.command("ping")
+    print("✅ MongoDB connected successfully!")
+except Exception as e:
+    print("❌ MongoDB connection failed:", e)
+    client = None
+
+db = client["Bloging"] if client else None
 
 # ==========================
-# ✅ CORS FIX (IMPORTANT)
+# CORS Middleware
 # ==========================
 app.add_middleware(
     CORSMiddleware,
@@ -39,6 +45,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/")
 def root():
     return {"message": "Backend is working"}
@@ -49,10 +56,12 @@ def root():
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password.encode()[:72])
+    password_bytes = password.encode("utf-8")[:72]
+    return pwd_context.hash(password_bytes)
 
-def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain.encode()[:72], hashed)
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    password_bytes = plain_password.encode("utf-8")[:72]
+    return pwd_context.verify(password_bytes, hashed_password)
 
 # ==========================
 # User Model
@@ -75,9 +84,9 @@ def user_helper(user):
         "name": user["name"],
         "email": user["email"],
         "role": user["role"],
-        "contact": user.get("contact"),
+        "contact": user.get("contact", ""),
         "profileImage": user.get("profileImage"),
-        "createdAt": user.get("createdAt"),
+        "createdAt": user.get("createdAt")
     }
 
 # ==========================
@@ -86,66 +95,141 @@ def user_helper(user):
 security = HTTPBearer()
 
 def create_access_token(data: dict):
-    data["exp"] = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    return jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
 
-def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
-):
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    token = credentials.credentials
     try:
-        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id = payload.get("user_id")
-        user = user_collection.find_one({"_id": ObjectId(user_id)})
-        if not user:
-            raise HTTPException(status_code=401, detail="User not found")
-        return User(**{**user_helper(user), "password": user["password"]})
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id: str = payload.get("user_id")
+        if user_id is None:
+            raise HTTPException(status_code=401, detail="Invalid token")
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
+    user = user_collection.find_one({"_id": ObjectId(user_id)})
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return User(
+        id=str(user["_id"]),
+        name=user["name"],
+        email=user["email"],
+        password=user["password"],
+        role=user["role"],
+        contact=user.get("contact"),
+        profileImage=user.get("profileImage"),
+        createdAt=user.get("createdAt")
+    )
+
 # ==========================
-# Auth APIs
+# User Endpoints
 # ==========================
+@app.get("/user")
+def get_users():
+    return [user_helper(u) for u in user_collection.find()]
+
 @app.post("/signup")
-async def signup(
+async def create_user(
     name: str = Form(...),
     email: str = Form(...),
     password: str = Form(...),
     role: str = Form(...),
     contact: str = Form(""),
-    profileImage: UploadFile = File(None),
+    profileImage: UploadFile = File(None)
 ):
-    if user_collection.find_one({"email": email.lower()}):
+    email = email.lower().strip()
+    if user_collection.find_one({"email": email}):
         raise HTTPException(status_code=400, detail="Email already exists")
 
-    user = {
+    hashed_password = hash_password(password)
+
+    user_dict = {
         "name": name,
-        "email": email.lower(),
-        "password": hash_password(password),
+        "email": email,
+        "password": hashed_password,
         "role": role,
         "contact": contact,
         "profileImage": None,
-        "createdAt": datetime.utcnow(),
+        "createdAt": datetime.utcnow()
     }
 
-    if profileImage:
-        user["profileImage"] = base64.b64encode(
-            await profileImage.read()
-        ).decode()
+    if profileImage and profileImage.filename:
+        contents = await profileImage.read()
+        user_dict["profileImage"] = base64.b64encode(contents).decode("utf-8")
 
-    user_collection.insert_one(user)
-    return {"message": "User registered"}
+    result = user_collection.insert_one(user_dict)
+    new_user = user_collection.find_one({"_id": result.inserted_id})
+
+    return {
+        "message": "User registered successfully",
+        "user": user_helper(new_user)
+    }
 
 @app.post("/login")
+
 def login(email: str = Body(...), password: str = Body(...)):
     user = user_collection.find_one({"email": email})
-    if not user or not verify_password(password, user["password"]):
-        raise HTTPException(status_code=400, detail="Invalid credentials")
+    if not user:
+        raise HTTPException(status_code=400, detail="User not found")
+    if not verify_password(password, user["password"]):
+        raise HTTPException(status_code=400, detail="Incorrect password")
 
-    token = create_access_token({"user_id": str(user["_id"]), "role": user["role"]})
+    token_data = {"user_id": str(user["_id"]), "role": user["role"]}
+    token = create_access_token(token_data)
+    print("LOGIN API HIT") 
+    return {"access_token": token, "role": user["role"], "userId": str(user["_id"]), "message": f"Logged in as {user['role']}"}
+
+@app.get("/user/me")
+def get_my_profile(current_user: User = Depends(get_current_user)):
+    return user_helper({
+        "_id": ObjectId(current_user.id),
+        "name": current_user.name,
+        "email": current_user.email,
+        "role": current_user.role,
+        "contact": current_user.contact,
+        "profileImage": current_user.profileImage,
+        "createdAt": current_user.createdAt
+    })
+@app.put("/user/me")
+async def update_my_profile(
+    name: str = Form(None),
+    password: str = Form(None),
+    contact: str = Form(None),
+    profileImage: UploadFile = File(None),
+    current_user: User = Depends(get_current_user)
+):
+    update_data = {}
+
+    if name:
+        update_data["name"] = name
+
+    if password:
+        update_data["password"] = hash_password(password)
+
+    if contact is not None:
+        update_data["contact"] = contact
+
+    if profileImage and profileImage.filename:
+        contents = await profileImage.read()
+        update_data["profileImage"] = base64.b64encode(contents).decode("utf-8")
+
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No fields to update")
+
+    user_collection.update_one(
+        {"_id": ObjectId(current_user.id)},
+        {"$set": update_data}
+    )
+
+    updated_user = user_collection.find_one({"_id": ObjectId(current_user.id)})
     return {
-        "access_token": token,
-        "role": user["role"],
-        "userId": str(user["_id"]),
+        "message": "Profile updated successfully",
+        "user": user_helper(updated_user)
     }
 @app.put("/user/me")
 async def update_my_profile(
@@ -218,10 +302,70 @@ def delete_user(user_id: str):
     if result.deleted_count == 0:
         return {"message": "User not found"}
     return {"message": "User deleted"}
+@app.get("/admin/posts")
+def get_admin_posts(current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Only admins can access this endpoint")
+
+    admin_posts = post_collection.find({"authorId": current_user.id})
+    return [post_helper(p) for p in admin_posts]
+@app.delete("/admin/posts/{post_id}")
+def delete_admin_post(post_id: str, current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Only admins can delete posts")
+
+    try:
+        post_obj_id = ObjectId(post_id)
+    except InvalidId:
+        raise HTTPException(status_code=400, detail="Invalid post ID")
+
+    post = post_collection.find_one({"_id": post_obj_id})
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+
+    if post["authorId"] != current_user.id:
+        raise HTTPException(status_code=403, detail="You can only delete your own posts")
+
+    post_collection.delete_one({"_id": post_obj_id})
+    return {"message": "Post deleted successfully"}
 
 
+@app.put("/admin/posts/{post_id}")
+async def update_admin_post(
+    post_id: str,
+    title: str = Form(None),
+    content: str = Form(None),
+    tags: str = Form(None),
+    postImage: UploadFile = File(None),
+    current_user: User = Depends(get_current_user)
+):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Only admins can update posts")
+
+    post = post_collection.find_one({"_id": ObjectId(post_id)})
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+
+    if post["authorId"] != current_user.id:
+        raise HTTPException(status_code=403, detail="You can only update your own posts")
+
+    update_data = {}
+    if title: update_data["title"] = title
+    if content: update_data["content"] = content
+    if tags: update_data["tags"] = [t.strip() for t in tags.split(",")]
+    if postImage and postImage.filename:
+        contents = await postImage.read()
+        update_data["postImage"] = base64.b64encode(contents).decode("utf-8")
+    update_data["updatedAt"] = datetime.utcnow()
+
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No fields to update")
+
+    post_collection.update_one({"_id": ObjectId(post_id)}, {"$set": update_data})
+    updated_post = post_collection.find_one({"_id": ObjectId(post_id)})
+    return {"message": "Post updated", "post": post_helper(updated_post)}
 # ==========================
-# Posts
+# Post Endpoints
 # ==========================
 post_collection = db["post"]
 
@@ -234,8 +378,10 @@ def post_helper(post):
         "tags": post["tags"],
         "postImage": post.get("postImage"),
         "createdAt": post["createdAt"],
-        "updatedAt": post["updatedAt"],
+        "updatedAt": post["updatedAt"]
     }
+
+# Create Post
 
 @app.post("/post/create")
 async def create_post(
@@ -243,32 +389,28 @@ async def create_post(
     content: str = Form(...),
     tags: str = Form(""),
     postImage: UploadFile = File(None),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user)
 ):
     if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Only admin allowed")
+        raise HTTPException(status_code=403, detail="Only admins can create posts")
 
-    post = {
+    post_dict = {
         "title": title,
         "content": content,
         "authorId": current_user.id,
-        "tags": tags.split(",") if tags else [],
+        "tags": [t.strip() for t in tags.split(",")] if tags else [],
         "postImage": None,
         "createdAt": datetime.utcnow(),
-        "updatedAt": datetime.utcnow(),
+        "updatedAt": datetime.utcnow()
     }
 
-    if postImage:
-        post["postImage"] = base64.b64encode(
-            await postImage.read()
-        ).decode()
+    if postImage and postImage.filename:
+        contents = await postImage.read()
+        post_dict["postImage"] = base64.b64encode(contents).decode("utf-8")
 
-    post_collection.insert_one(post)
-    return {"message": "Post created"}
-
-@app.get("/post")
-def get_posts():
-    return [post_helper(p) for p in post_collection.find()]
+    result = post_collection.insert_one(post_dict)
+    new_post = post_collection.find_one({"_id": result.inserted_id})
+    return {"message": "Post created", "post": post_helper(new_post)}
 
 # Update Post
 @app.put("/post/{post_id}")
@@ -329,3 +471,14 @@ def delete_post(post_id: str, current_user: User = Depends(get_current_user)):
     # Delete post
     post_collection.delete_one({"_id": post_obj_id})
     return {"message": "Post deleted successfully"}
+# Display Posts
+@app.get("/post")
+def display_posts():
+    return [post_helper(p) for p in post_collection.find()]
+
+
+@app.get("/post")
+def display_posts(current_user: User = Depends(get_current_user)):
+    # Fetch only posts created by this user
+    user_posts = post_collection.find({"authorId": current_user.id})
+    return [post_helper(p) for p in user_posts]

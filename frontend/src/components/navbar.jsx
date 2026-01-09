@@ -1,48 +1,61 @@
-import { Link, useNavigate } from "react-router-dom";
+// src/components/Navbar.jsx
+import { Link, useLocation } from "react-router-dom";
 import "./Navbar.css";
 
-const Navbar = ({ auth, setAuth }) => {
-  const navigate = useNavigate();
-
-  const isLoggedIn = !!auth.token;
-  const isAdmin = auth.role === "admin";
+const Navbar = () => {
+  const location = useLocation();
+  const token = localStorage.getItem("token"); // check if user is logged in
 
   const handleLogout = () => {
     localStorage.clear();
-    setAuth({ token: null, role: null, user: null }); // update App-level auth
-    navigate("/login");
+    window.location.href = "/login";
   };
 
   return (
-    <div className="navbar">
-      <h1 className="navbar-title">Blog App</h1>
-
+    <nav className="navbar">
+      <div className="navbar-title">Blog App</div>
       <div className="nav-right">
-        <Link to="/posts" className="nav-btn">
-          Posts
-        </Link>
-
-        {!isLoggedIn && (
+        {token ? (
+          // Logged in buttons
           <>
-            <Link to="/signup" className="nav-btn">Signup</Link>
-            <Link to="/login" className="nav-btn">Login</Link>
-          </>
-        )}
+            <Link
+              to="/myposts"
+              className={`nav-btn ${location.pathname === "/myposts" ? "active" : ""}`}
+            >
+              My Posts
+            </Link>
 
-        {isLoggedIn && (
-          <>
-            {isAdmin && (
-              <Link to="/create-post" className="nav-btn">
-                Add Post
-              </Link>
-            )}
-            <button onClick={handleLogout} className="nav-btn logout-btn">
+            <Link
+              to="/create-post"
+              className={`nav-btn ${location.pathname === "/create-post" ? "active" : ""}`}
+            >
+              Create Post
+            </Link>
+
+            <button className="nav-btn logout-btn" onClick={handleLogout}>
               Logout
             </button>
           </>
+        ) : (
+          // Not logged in buttons
+          <>
+            <Link
+              to="/login"
+              className={`nav-btn ${location.pathname === "/login" ? "active" : ""}`}
+            >
+              Login
+            </Link>
+
+            <Link
+              to="/signup"
+              className={`nav-btn ${location.pathname === "/signup" ? "active" : ""}`}
+            >
+              Signup
+            </Link>
+          </>
         )}
       </div>
-    </div>
+    </nav>
   );
 };
 

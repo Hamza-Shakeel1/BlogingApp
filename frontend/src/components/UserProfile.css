@@ -1,4 +1,4 @@
-.upn-container {
+User profile .upn-container {
     max-width: 900px;
     width: 95%;
     height: auto;
@@ -12,7 +12,7 @@
     box-sizing: border-box;
 }
 
-/* Header */
+
 .upn-header {
     text-align: center;
     font-size: 30px;
@@ -77,7 +77,6 @@
     display: none;
 }
 
-/* Form fields */
 .upn-input {
     width: 100%;
     max-width: 100%;
@@ -99,14 +98,12 @@
     box-shadow: 0 0 5px #4f46e5;
 }
 
-/* Disabled fields */
 .upn-input[disabled] {
     background-color: #1f1f2d;
     color: #9ca3af;
     cursor: not-allowed;
 }
 
-/* Submit button */
 .upn-button {
     width: 100%;
     max-width: 100%;
@@ -133,7 +130,6 @@
     box-shadow: none;
 }
 
-/* Responsive Styles */
 @media (max-width: 1024px) {
     .upn-container {
         margin-left: 5rem;
