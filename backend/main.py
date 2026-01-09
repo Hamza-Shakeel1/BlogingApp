@@ -202,8 +202,8 @@ class LoginModel(BaseModel):
 # Routes
 # -------------------------------
 @app.post("/login")
-async def login(login: LoginModel):
-    user = await user_collection.find_one({"email": login.email.lower()})
+def login(login: LoginModel):
+    user = user_collection.find_one({"email": login.email.lower()})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -222,10 +222,7 @@ async def login(login: LoginModel):
         "user": {"email": user["email"], "name": user.get("name", "")}
     }
 
-# Optional GET for debugging
-@app.get("/login")
-async def login_get():
-    return {"message": "Use POST to login"}
+
 @app.get("/user/me")
 def get_my_profile(current_user: User = Depends(get_current_user)):
     return user_helper({
