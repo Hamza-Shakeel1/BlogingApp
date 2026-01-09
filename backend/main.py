@@ -256,11 +256,9 @@ async def create_post(
     return {"message": "Post created", "post": post_helper(new_post)}
 
 @app.get("/post")
-def display_posts(current_user: Optional[User] = Depends(get_current_user_optional)):
-    if current_user:
-        user_posts = post_collection.find({"authorId": current_user.id})
-        return [post_helper(p) for p in user_posts]
-    return [post_helper(p) for p in post_collection.find()]
+def display_posts():
+    posts = post_collection.find()
+    return [post_helper(p) for p in posts]
 
 @app.put("/post/{post_id}")
 async def update_post(
