@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import "./UserProfile.css"; // CSS file
 
-const API_URL = "http://blogingapp-production.up.railway.app"; // fixed URL
+const API_URL = "https://blogingapp-production.up.railway.app";
+
 
 const UserProfile = () => {
   const [loading, setLoading] = useState(true);
