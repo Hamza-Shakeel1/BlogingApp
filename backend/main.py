@@ -331,7 +331,7 @@ def delete_post(post_id: str, current_user: User = Depends(get_current_user)):
 
 
 
-@app.get("/post")
+@app.get("/my-posts")
 def display_posts(current_user: User = Depends(get_current_user)):
     # Fetch only posts created by this user
     user_posts = post_collection.find({"authorId": current_user.id})
