@@ -1,33 +1,50 @@
-// src/components/SideBar.jsx
-import { Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import "./Sidebar.css";
 
-const SideBar = ({ auth }) => {
+const Sidebar = ({ auth }) => {
   const user = auth?.user;
-
-  if (!user) return null;
 
   return (
     <div className="sidebar">
-      <Link to="/user-profile" className="sidebar-link">
+      <NavLink
+        to="/user-profile"
+        className={({ isActive }) =>
+          isActive ? "sidebar-link active" : "sidebar-link"
+        }
+      >
         User Profile
-      </Link>
+      </NavLink>
 
-      <Link to="/posts" className="sidebar-link">
+      <NavLink
+        to="/posts"
+        className={({ isActive }) =>
+          isActive ? "sidebar-link active" : "sidebar-link"
+        }
+      >
         All Posts
-      </Link>
+      </NavLink>
 
-      <Link to="/my-posts" className="sidebar-link">
+      <NavLink
+        to="/my-posts"
+        className={({ isActive }) =>
+          isActive ? "sidebar-link active" : "sidebar-link"
+        }
+      >
         My Posts
-      </Link>
+      </NavLink>
 
-      {user.role === "admin" && (
-        <Link to="/create-post" className="sidebar-link">
-          Create Post
-        </Link>
+      {user?.role === "admin" && (
+        <NavLink
+          to="/create-post"
+          className={({ isActive }) =>
+            isActive ? "sidebar-link active" : "sidebar-link"
+          }
+        >
+          Admin Dashboard
+        </NavLink>
       )}
     </div>
   );
 };
 
-export default SideBar;
+export default Sidebar;
