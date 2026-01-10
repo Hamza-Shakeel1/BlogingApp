@@ -1,17 +1,18 @@
 // src/App.jsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import Nav from "./components/Nav";
-import Sidebar from "./components/Sidebar";
-import Login from "./components/LoginForm";
-import Signup from "./components/Signup";
 import UserProfile from "./components/UserProfile";
 import CreatePost from "./components/CreatePost";
 import MyPosts from "./components/MyPosts";
+import SideBar from "./components/SideBar";
+import Signup from "./components/Signup";
+import Login from "./components/LoginForm";
 import PrivateRoute from "./components/PrivateRoute";
+import Navbar from "./components/Nav";
+import Nav from "./components/Nav";
 
 function App() {
-  // Central auth state with localStorage
+  // Single source of truth for auth with safe localStorage parsing
   const [auth, setAuth] = useState(() => {
     const token = localStorage.getItem("token");
     const role = localStorage.getItem("role");
@@ -24,71 +25,86 @@ function App() {
       }
     } catch (err) {
       console.warn("Error parsing user from localStorage:", err);
+      user = null;
     }
 
     return { token, role, user };
   });
 
-  const isLoggedIn = !!auth?.token;
+  const isLoggedIn = !!auth.token;
 
   return (
     <BrowserRouter>
       <div className="app-container">
-        {/* Navbar */}
+        {/* Navbar receives auth and setAuth */}
         <Nav auth={auth} setAuth={setAuth} />
 
-        {/* Layout: Sidebar + main content */}
-        <div className="app-content" style={{ display: "flex" }}>
-          {isLoggedIn && <Sidebar auth={auth} />}
+        <div className="app-content">
+          {/* Sidebar only if logged in */}
+          {isLoggedIn && <SideBar auth={auth} />}
 
-          <div
-            className="main-wrapper"
-            style={{ flexGrow: 1, padding: "20px" }}
-          >
+          <div className={`main-wrapper ${isLoggedIn ? "with-sidebar-margin" : ""}`}>
             <Routes>
-              {/* Public */}
-              <Route path="/login" element={<Login setAuth={setAuth} />} />
+              {/* Public Routes */}
               <Route path="/signup" element={<Signup />} />
+              <Route path="/login" element={<Login setAuth={setAuth} />} />
 
-              {/* Protected */}
-              <Route
-                path="/user-profile"
-                element={
-                  <PrivateRoute auth={auth}>
-                    <UserProfile auth={auth} />
-                  </PrivateRoute>
-                }
-              />
+              {/* All Posts */}
               <Route
                 path="/posts"
                 element={
-                  <PrivateRoute auth={auth}>
-                    <CreatePost auth={auth} />
-                  </PrivateRoute>
+                  <main className={`main-content ${isLoggedIn ? "with-sidebar" : "without-sidebar"}`}>
+                    <div className="content-wrapper">
+                      <CreatePost />
+                    </div>
+                  </main>
                 }
               />
+
+              {/* My Posts (Protected) */}
               <Route
                 path="/my-posts"
                 element={
-                  <PrivateRoute auth={auth}>
-                    <MyPosts auth={auth} />
+                  <PrivateRoute>
+                    <main className="main-content with-sidebar">
+                      <div className="content-wrapper">
+                        <MyPosts />
+                      </div>
+                    </main>
                   </PrivateRoute>
                 }
               />
+
+              {/* User Profile (Protected) */}
+              <Route
+                path="/user-profile"
+                element={
+                  <PrivateRoute>
+                    <main className="main-content with-sidebar">
+                      <div className="content-wrapper">
+                        <UserProfile />
+                      </div>
+                    </main>
+                  </PrivateRoute>
+                }
+              />
+
+              {/* Admin Create Post */}
               <Route
                 path="/create-post"
                 element={
-                  <PrivateRoute auth={auth} role="admin">
-                    <CreatePost auth={auth} />
+                  <PrivateRoute role="admin">
+                    <main className="main-content with-sidebar">
+                      <div className="content-wrapper">
+                        <CreatePost />
+                      </div>
+                    </main>
                   </PrivateRoute>
                 }
               />
 
               {/* Fallback */}
-              <Route
-                path="*"
-                element={<Navigate to={isLoggedIn ? "/posts" : "/login"} replace />}
-              />
+              <Route path="*" element={<Navigate to="/posts" replace />} />
             </Routes>
           </div>
         </div>

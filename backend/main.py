@@ -386,6 +386,13 @@ def post_helper(post):
         "updatedAt": post["updatedAt"]
     }
 
+
+
+# Display Posts
+@app.get("/post")
+def display_posts():
+    return [post_helper(p) for p in post_collection.find()]
+
 # Create Post
 
 @app.post("/post/create")
@@ -476,10 +483,6 @@ def delete_post(post_id: str, current_user: User = Depends(get_current_user)):
     # Delete post
     post_collection.delete_one({"_id": post_obj_id})
     return {"message": "Post deleted successfully"}
-# Display Posts
-@app.get("/post")
-def display_posts():
-    return [post_helper(p) for p in post_collection.find()]
 
 
 @app.get("/post")
