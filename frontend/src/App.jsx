@@ -9,7 +9,7 @@ import SideBar from "./components/SideBar";
 import Signup from "./components/Signup";
 import Login from "./components/LoginForm";
 import PrivateRoute from "./components/PrivateRoute";
-import Navbar from "./components/Navbar";
+import Navbar from "./components/navbar";
 
 function App() {
   // Single source of truth for auth
