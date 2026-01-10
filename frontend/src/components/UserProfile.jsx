@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import "./UserProfile.css"; // CSS file
 
-const API_URL = "https://blogingapp-production.up.railway.app";
+const API_URL = "https://bloging-app-beryl.vercel.app";
 
 
 const UserProfile = () => {

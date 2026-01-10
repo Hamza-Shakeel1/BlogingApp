@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "https://blogingapp-production.up.railway.app"; // rename api → API_URL
+const API_URL = "https://bloging-app-beryl.vercel.app"; // rename api → API_URL
 
 export const getUsers = async () => {
   try {

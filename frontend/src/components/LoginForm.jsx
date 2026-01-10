@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./Login.css";
 
-const API_URL = "https://blogingapp-production.up.railway.app";
+const API_URL = "https://bloging-app-beryl.vercel.app";
 
 
 export default function Login({ setAuth }) {
