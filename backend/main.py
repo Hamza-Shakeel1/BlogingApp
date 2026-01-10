@@ -333,6 +333,57 @@ def delete_post(post_id: str, current_user: User = Depends(get_current_user)):
 
 @app.get("/my-posts")
 def display_posts(current_user: User = Depends(get_current_user)):
-    # Fetch only posts created by this user
-    user_posts = post_collection.find({"authorId": current_user.id})
+    user_posts = post_collection.find(
+        {"authorId": current_user.id}   # STRING match ✅
+    )
     return [post_helper(p) for p in user_posts]
+
+
+
+
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    token = credentials.credentials
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+
+        user_id = payload.get("user_id")
+        if not user_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid token payload",
+            )
+
+    except JWTError:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or expired token",
+        )
+
+    try:
+        user = user_collection.find_one({"_id": ObjectId(user_id)})
+    except InvalidId:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid user ID",
+        )
+
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found",
+        )
+
+    # ✅ Return User model (as YOU are using everywhere)
+    return User(
+        id=str(user["_id"]),          # STRING
+        name=user["name"],
+        email=user["email"],
+        password=user["password"],    # needed internally
+        role=user["role"],
+        contact=user.get("contact"),
+        profileImage=user.get("profileImage"),
+        createdAt=user.get("createdAt"),
+    )
