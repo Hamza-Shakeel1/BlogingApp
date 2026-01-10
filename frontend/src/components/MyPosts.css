@@ -1,7 +1,7 @@
 .myposts-container {
     max-width: 1200px;
     margin: 70px auto auto auto;
-    margin-left: 280px;
+    /* margin-left: 280px; */
     /* adjust for sidebar */
     padding: 20px;
     display: flex;
