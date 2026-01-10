@@ -2,17 +2,16 @@
 import { useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
-import UserProfile from "./components/UserProfile";
-import MyPosts from "./components/MyPosts";
-import CreatePost from "./components/CreatePost";
+import Navbar from "./components/Nav";
 import SideBar from "./components/SideBar";
 import Signup from "./components/Signup";
 import Login from "./components/LoginForm";
+import UserProfile from "./components/UserProfile";
+import MyPosts from "./components/MyPosts";
+import CreatePost from "./components/CreatePost";
 import PrivateRoute from "./components/PrivateRoute";
-import Navbar from "./components/navbar";
 
 function App() {
-  // Single source of truth for auth
   const [auth, setAuth] = useState(() => {
     const token = localStorage.getItem("token");
     const role = localStorage.getItem("role");
@@ -21,8 +20,7 @@ function App() {
     try {
       const userStr = localStorage.getItem("user");
       if (userStr && userStr !== "undefined") user = JSON.parse(userStr);
-    } catch (err) {
-      console.warn("Error parsing user from localStorage:", err);
+    } catch {
       user = null;
     }
 
@@ -33,57 +31,48 @@ function App() {
 
   return (
     <BrowserRouter>
-      <div className="app-container">
-        {/* Navbar always visible */}
-        <Navbar auth={auth} setAuth={setAuth} />
+      <Navbar auth={auth} setAuth={setAuth} />
 
-        <div className="app-content">
-          {/* Sidebar only if logged in */}
-          {isLoggedIn && <SideBar auth={auth} />}
+      <div className="app-content">
+        {isLoggedIn && <SideBar auth={auth} />}
 
-          <div className={`main-wrapper ${isLoggedIn ? "with-sidebar-margin" : ""}`}>
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/login" element={<Login setAuth={setAuth} />} />
+        <div className={`main-wrapper ${isLoggedIn ? "with-sidebar-margin" : ""}`}>
+          <Routes>
+            {/* Public */}
+            <Route path="/posts" element={<CreatePost />} />
+            <Route path="/login" element={<Login setAuth={setAuth} />} />
+            <Route path="/signup" element={<Signup />} />
 
-              {/* All Posts - visible to everyone */}
-              <Route path="/posts" element={<CreatePost />} />
+            {/* Protected */}
+            <Route
+              path="/my-posts"
+              element={
+                <PrivateRoute>
+                  <MyPosts />
+                </PrivateRoute>
+              }
+            />
 
-              {/* My Posts - Protected */}
-              <Route
-                path="/my-posts"
-                element={
-                  <PrivateRoute>
-                    <MyPosts />
-                  </PrivateRoute>
-                }
-              />
+            <Route
+              path="/user-profile"
+              element={
+                <PrivateRoute>
+                  <UserProfile />
+                </PrivateRoute>
+              }
+            />
 
-              {/* User Profile - Protected */}
-              <Route
-                path="/user-profile"
-                element={
-                  <PrivateRoute>
-                    <UserProfile />
-                  </PrivateRoute>
-                }
-              />
+            <Route
+              path="/create-post"
+              element={
+                <PrivateRoute role="admin">
+                  <CreatePost />
+                </PrivateRoute>
+              }
+            />
 
-              {/* Admin Create Post - Protected + Admin Only */}
-              <Route
-                path="/create-post"
-                element={
-                  <PrivateRoute role="admin">
-                    <CreatePost />
-                  </PrivateRoute>
-                }
-              />
-
-              {/* Fallback */}
-              <Route path="*" element={<Navigate to="/posts" replace />} />
-            </Routes>
-          </div>
+            <Route path="*" element={<Navigate to="/posts" replace />} />
+          </Routes>
         </div>
       </div>
     </BrowserRouter>

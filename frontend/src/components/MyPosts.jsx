@@ -5,7 +5,6 @@ import "./CreatePost.css";
 
 const API_URL = "https://bloging-app-beryl.vercel.app";
 
-
 const MyPosts = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,42 +22,25 @@ const MyPosts = () => {
   });
 
   const token = localStorage.getItem("token");
-  const role = localStorage.getItem("role"); // "admin" or null
+  const user = JSON.parse(localStorage.getItem("user") || "null");
 
-  // Only admins can access
   useEffect(() => {
-    if (role === "admin") fetchPosts();
+    if (token) fetchPosts();
     else setLoading(false);
   }, []);
 
   const fetchPosts = async () => {
     setLoading(true);
-    setError("");
     try {
       const res = await axios.get(`${API_URL}/post/my`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setPosts(res.data);
-    } catch (err) {
-      console.error(err);
+    } catch {
       setError("Failed to fetch posts");
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleFileChange = (e) => {
-    setForm((prev) => ({ ...prev, postImage: e.target.files?.[0] || null }));
-  };
-
-  const resetForm = () => {
-    setForm({ id: null, title: "", content: "", tags: "", postImage: null, existingImage: null });
-    setShowForm(false);
   };
 
   const handleEdit = (post) => {
@@ -73,106 +55,68 @@ const MyPosts = () => {
     setShowForm(true);
   };
 
+  const handleDelete = async (id) => {
+    if (!window.confirm("Delete this post?")) return;
+    await axios.delete(`${API_URL}/post/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    fetchPosts();
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (role !== "admin") return;
-
     setSaving(true);
-    setError("");
 
-    try {
-      const formData = new FormData();
-      formData.append("title", form.title);
-      formData.append("content", form.content);
-      // Convert tags string to array
-      const tagsArray = form.tags.split(",").map((t) => t.trim()).filter(Boolean);
-      formData.append("tags", JSON.stringify(tagsArray));
-      if (form.postImage) formData.append("postImage", form.postImage);
+    const formData = new FormData();
+    formData.append("title", form.title);
+    formData.append("content", form.content);
+    formData.append(
+      "tags",
+      JSON.stringify(form.tags.split(",").map(t => t.trim()).filter(Boolean))
+    );
+    if (form.postImage) formData.append("postImage", form.postImage);
 
-      await axios.put(`${API_URL}/post/${form.id}`, formData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+    await axios.put(`${API_URL}/post/${form.id}`, formData, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-      resetForm();
-      fetchPosts();
-    } catch (err) {
-      console.error(err);
-      setError("Failed to update post");
-    } finally {
-      setSaving(false);
-    }
+    setShowForm(false);
+    fetchPosts();
+    setSaving(false);
   };
 
-  const handleDelete = async (postId) => {
-    if (!window.confirm("Are you sure you want to delete this post?")) return;
-    try {
-      await axios.delete(`${API_URL}/post/${postId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      fetchPosts();
-    } catch (err) {
-      console.error(err);
-      alert("Failed to delete post");
-    }
-  };
-
-  const getImageUrl = (imageBase64) =>
-    imageBase64 ? `data:image/*;base64,${imageBase64}` : null;
-
-  if (loading) return <p>Loading posts...</p>;
-  if (role !== "admin") return <p>You do not have access to this page.</p>;
+  if (!token) return <p>Please login to view your posts.</p>;
+  if (loading) return <p>Loading...</p>;
 
   return (
     <div className="create-post-container">
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      <h2>My Posts</h2>
 
       {showForm && (
         <form className="create-post-form" onSubmit={handleSubmit}>
-          <h2>Update Post</h2>
-          <input type="text" name="title" value={form.title} onChange={handleChange} required />
-          <textarea name="content" value={form.content} onChange={handleChange} required />
-          <input
-            type="text"
-            name="tags"
-            value={form.tags}
-            onChange={handleChange}
-            placeholder="Tags (comma separated)"
-          />
-          <input type="file" accept="image/*" onChange={handleFileChange} />
-          {form.existingImage && !form.postImage && (
-            <div style={{ marginTop: 10 }}>
-              <p>Current Image:</p>
-              <img src={getImageUrl(form.existingImage)} alt="current" style={{ width: "200px" }} />
-            </div>
-          )}
-          <div style={{ marginTop: 10, display: "flex", gap: 10 }}>
-            <button type="submit" disabled={saving}>
-              {saving ? "Updating..." : "Update"}
-            </button>
-            <button type="button" onClick={resetForm}>Cancel</button>
-          </div>
+          <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} />
+          <textarea value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} />
+          <input value={form.tags} onChange={e => setForm({ ...form, tags: e.target.value })} />
+          <button type="submit">{saving ? "Updating..." : "Update"}</button>
         </form>
       )}
 
-      <h2>My Posts</h2>
       <div className="posts-list">
         {posts.length === 0 ? (
           <p>No posts found</p>
         ) : (
-          posts.map((post) => (
+          posts.map(post => (
             <div key={post.id} className="post-card">
-              {getImageUrl(post.postImage) ? (
-                <img src={getImageUrl(post.postImage)} alt={post.title} />
-              ) : (
-                <div className="placeholder-image">No Image</div>
-              )}
               <h3>{post.title}</h3>
-              <p>{post.content.length > 50 ? post.content.slice(0, 50) + "..." : post.content}</p>
-              <small>Tags: {post.tags?.join(", ")}</small>
-              <div className="post-actions">
-                <button onClick={() => handleEdit(post)}>Edit</button>
-                <button onClick={() => handleDelete(post.id)}>Delete</button>
-              </div>
+              <p>{post.content}</p>
+
+              {/* ✅ EDIT / DELETE ONLY FOR OWNER */}
+              {user?.id === post.userId && (
+                <div className="post-actions">
+                  <button onClick={() => handleEdit(post)}>Edit</button>
+                  <button onClick={() => handleDelete(post.id)}>Delete</button>
+                </div>
+              )}
             </div>
           ))
         )}
