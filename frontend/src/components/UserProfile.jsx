@@ -110,8 +110,8 @@ const UserProfile = () => {
       {error && <p className="upn-error">{error}</p>}
       {success && <p className="upn-success">{success}</p>}
 
-      {/* <form onSubmit={handleSubmit} className="upn-form">
-        <div className="upn-avatar-wrapper">
+      <form onSubmit={handleSubmit} className="upn-form">
+        {/* <div className="upn-avatar-wrapper">
           {form.preview ? (
             <img src={form.preview} alt="Profile" className="upn-avatar-img" />
           ) : (
@@ -119,14 +119,14 @@ const UserProfile = () => {
               {form.name[0]?.toUpperCase()}
             </div>
           )}
-        </div>
+        </div> */}
 
         <input
           type="file"
           accept="image/*"
           onChange={handleChange}
           className="upn-file-input"
-        /> */}
+        />
 
         <input
           type="text"
