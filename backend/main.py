@@ -328,3 +328,11 @@ def delete_post(post_id: str, current_user: User = Depends(get_current_user)):
 
     post_collection.delete_one({"_id": obj_id})
     return {"message": "Post deleted successfully"}
+
+
+
+@app.get("/post")
+def display_posts(current_user: User = Depends(get_current_user)):
+    # Fetch only posts created by this user
+    user_posts = post_collection.find({"authorId": current_user.id})
+    return [post_helper(p) for p in user_posts]
