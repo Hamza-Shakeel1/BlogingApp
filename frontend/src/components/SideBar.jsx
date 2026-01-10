@@ -1,10 +1,10 @@
+// src/components/SideBar.jsx
 import { Link } from "react-router-dom";
 import "./Sidebar.css";
 
 const SideBar = ({ auth }) => {
   const user = auth?.user;
 
-  // ❌ If user is not logged in, don't show sidebar
   if (!user) return null;
 
   return (
@@ -17,15 +17,13 @@ const SideBar = ({ auth }) => {
         All Posts
       </Link>
 
-      {/* ✅ SHOW FOR EVERY LOGGED-IN USER */}
       <Link to="/my-posts" className="sidebar-link">
         My Posts
       </Link>
 
-      {/* ✅ ADMIN ONLY */}
       {user.role === "admin" && (
-        <Link to="/admin-dashboard" className="sidebar-link">
-          Admin Dashboard
+        <Link to="/create-post" className="sidebar-link">
+          Create Post
         </Link>
       )}
     </div>
